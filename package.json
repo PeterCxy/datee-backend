@@ -1,0 +1,33 @@
+{
+  "name": "datee-backend",
+  "version": "1.0.0",
+  "description": "Dat.ee backend implementation",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/PeterCxy/datee-backend.git"
+  },
+  "author": "The Dat.ee Authors",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/PeterCxy/datee-backend/issues"
+  },
+  "homepage": "https://github.com/PeterCxy/datee-backend#readme",
+  "devDependencies": {
+    "@types/express-oauth-server": "^2.0.1",
+    "@types/nano": "^7.0.0",
+    "@types/node": "^11.12.2",
+    "@types/oauth2-server": "^3.0.10",
+    "typescript": "^3.4.1"
+  },
+  "dependencies": {
+    "express": "^4.16.4",
+    "express-oauth-server": "^2.0.0",
+    "nano": "^8.0.1",
+    "oauth2-server": "^3.0.1"
+  }
+}
