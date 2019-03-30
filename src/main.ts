@@ -1,5 +1,7 @@
 import Server from "./server";
+import "./controller/index";
 
 // Just load the server :)
-Server.setupRoutes();
-Server.listen(23456);
+Server.setupRoutes().then(() => {
+    Server.listen(23456);
+});

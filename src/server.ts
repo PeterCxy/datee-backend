@@ -6,22 +6,45 @@ interface ServerConfig {
     couchdb: string
 }
 
+export interface ComponentRouter {
+    mountpoint: string // The path prefix of the component
+    router: express.Router
+}
+
+// A component in our application that is able to
+// insert routes into the main controller
+export interface Component {
+    setupRoutes(): Promise<ComponentRouter>;
+}
+
 // Central manager of the entire backend server
 class DateeServer {
-    private app : express.Express;
-    private dbServer : nano.ServerScope;
+    private app: express.Express;
+    private dbServer: nano.ServerScope;
+    private components: Component[] = [];
     constructor(config: ServerConfig) {
         this.app = express();
         this.dbServer = nano(config.couchdb);
     }
 
-    public setupRoutes() {
+    public registerComponent(c: Component) {
+        this.components.push(c);
+    }
+
+    public async setupRoutes(): Promise<void> {
         // Requests can use JSON encoding
         this.app.use(bodyParser.json());
         // Good old urlencoded POST also accepted
         this.app.use(bodyParser.urlencoded({ extended: false }));
         this.app.get("/hello", (_, res) => {
             res.send("hello!");
+        });
+
+        // Register all components to the Express app
+        let routers = await Promise.all(
+            this.components.map((c) => c.setupRoutes()));
+        routers.forEach((r) => {
+            this.app.use(r.mountpoint, r.router);
         });
     }
 

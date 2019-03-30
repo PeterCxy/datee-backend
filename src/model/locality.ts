@@ -1,9 +1,11 @@
 // All supported countries
+export const NUM_CONTRY = 1;
 export enum Countries {
     China = 0,
 }
 
 // All supported Cities
+export const NUM_CITY = 1;
 export enum Cities {
     Suzhou = 0,
 }
@@ -14,13 +16,4 @@ export interface City {
     name: string
     longitude: number
     latitude: number
-}
-
-// All the information
-export var CityInfo: {[id: number]: City;} = {};
-CityInfo[Cities.Suzhou] = {
-    country: Countries.China,
-    name: "Suzhou",
-    longitude: 120.5853,
-    latitude: 31.2990,
 }
