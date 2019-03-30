@@ -19,6 +19,7 @@
   },
   "homepage": "https://github.com/PeterCxy/datee-backend#readme",
   "devDependencies": {
+    "@types/body-parser": "^1.17.0",
     "@types/express-oauth-server": "^2.0.1",
     "@types/nano": "^7.0.0",
     "@types/node": "^11.12.2",
@@ -26,6 +27,7 @@
     "typescript": "^3.4.1"
   },
   "dependencies": {
+    "body-parser": "^1.18.3",
     "express": "^4.16.4",
     "express-oauth-server": "^2.0.0",
     "nano": "^8.0.1",

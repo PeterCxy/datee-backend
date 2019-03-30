@@ -1,4 +1,5 @@
 import express from "express";
+import bodyParser from "body-parser";
 import nano from "nano";
 
 interface ServerConfig {
@@ -15,6 +16,10 @@ class DateeServer {
     }
 
     public setupRoutes() {
+        // Requests can use JSON encoding
+        this.app.use(bodyParser.json());
+        // Good old urlencoded POST also accepted
+        this.app.use(bodyParser.urlencoded({ extended: false }));
         this.app.get("/hello", (_, res) => {
             res.send("hello!");
         });
