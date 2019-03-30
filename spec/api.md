@@ -14,9 +14,9 @@ Returns:
 
 ### Register
 
-Endpoint: `/user/register`
-Method: `PUT`
-Parameters:
+Endpoint: `/user/register`  
+Method: `PUT`  
+Parameters:  
 
 ```
 email: string
