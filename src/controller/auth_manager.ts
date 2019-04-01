@@ -146,8 +146,19 @@ class AuthManager implements Component, AuthHandler {
         });
     }
 
-    public async setupRoutes(): Promise<ComponentRouter> {
+    private async initializeDb(): Promise<void> {
         this.db = await Server.getDatabase("tokens");
+        await this.db.createIndex({
+            index: {
+                fields: ["accessToken", "refreshToken"]
+            },
+            ddoc: "indexToken",
+            name: "indexToken"
+        });
+    }
+
+    public async setupRoutes(): Promise<ComponentRouter> {
+        await this.initializeDb();
         let expressRouter = express.Router();
         expressRouter.use("/token", this.authServer.token());
         return {

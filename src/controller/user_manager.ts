@@ -17,9 +17,20 @@ class UserManager implements Component {
         Server.registerComponent(this);
     }
 
+    private async initializeDb(): Promise<void> {
+        this.db = await Server.getDatabase("users");
+        await this.db.createIndex({
+            index: {
+                fields: ["uid", "email"],
+            },
+            ddoc: "indexUser",
+            name: "indexUser"
+        });
+    }
+
     public async setupRoutes(): Promise<ComponentRouter> {
         // Initialize the database here because it is async
-        this.db = await Server.getDatabase("users");
+        await this.initializeDb();
         // Build the router
         let expressRouter = express.Router();
         let router = RestypedRouter<UserManagerAPI>(expressRouter);
