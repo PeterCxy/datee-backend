@@ -44,6 +44,24 @@ class UserManager implements Component {
         }
     }
 
+    // Find a user by email and verify the password
+    // if the user is not found or the password is
+    // incorrect, return null; otherwise return the
+    // User object
+    public async verifyUserLogin(email: string, password: string): Promise<User | undefined> {
+        let user = await this.findUserByEmail(email);
+        if (!user) {
+            // User not found
+            return null;
+        }
+        // MUST use this constant-time comparison for the password
+        if (!(await bcrypt.compare(password, user.passwordHash))) {
+            // Password incorrect
+            return null;
+        }
+        return user;
+    }
+
     // Find a user by UUID
     public async findUserById(uid: string): Promise<User | undefined> {
         let res = await this.db.find({

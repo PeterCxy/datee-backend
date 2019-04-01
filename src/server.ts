@@ -1,9 +1,11 @@
+import OAuthClients from "./model/oauth_client";
 import express from "express";
 import bodyParser from "body-parser";
 import nano from "nano";
 
 interface ServerConfig {
-    couchdb: string
+    couchdb: string,
+    oauth_clients: OAuthClients
 }
 
 export interface ComponentRouter {
@@ -17,12 +19,17 @@ export interface Component {
     setupRoutes(): Promise<ComponentRouter>;
 }
 
+export interface AuthHandler {
+    getAuthMiddleware(): express.RequestHandler;
+}
+
 // Central manager of the entire backend server
 class DateeServer {
     private app: express.Express;
     private dbServer: nano.ServerScope;
     private components: Component[] = [];
-    constructor(config: ServerConfig) {
+    private authHandler: AuthHandler;
+    constructor(private config: ServerConfig) {
         this.app = express();
         this.dbServer = nano(config.couchdb);
     }
@@ -31,11 +38,21 @@ class DateeServer {
         this.components.push(c);
     }
 
+    public registerAuthHandler(c: AuthHandler) {
+        this.authHandler = c;
+    }
+
     public async setupRoutes(): Promise<void> {
         // Requests can use JSON encoding
         this.app.use(bodyParser.json());
         // Good old urlencoded POST also accepted
         this.app.use(bodyParser.urlencoded({ extended: false }));
+        // Insert the authentication middleware if present
+        // before ANYTHING else
+        if (this.authHandler) {
+            this.app.use(this.authHandler.getAuthMiddleware());
+        }
+
         this.app.get("/hello", (_, res) => {
             res.send("hello!");
         });
@@ -52,6 +69,10 @@ class DateeServer {
         this.app.listen(port, () => {
             console.log("Dat.ee backend server is up and running at " + port);
         });
+    }
+
+    public getConfig(): ServerConfig {
+        return this.config;
     }
 
     // Get a database object from CouchDB

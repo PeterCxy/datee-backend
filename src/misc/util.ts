@@ -1,3 +1,5 @@
+import nano from "nano";
+
 // Check if `obj` has everything in `props`
 // Error is thrown if check failed
 export function checkProperties(obj: any, props: string[]) {
@@ -23,4 +25,16 @@ export function checkPassword(passwd: string) {
         throw "password length must be between 8 and 50";
     }
     // TODO: Extend the password complexity check to appropriate level
+}
+
+export function isDocument(obj: any): obj is nano.Document {
+    return '_id' in obj && '_rev' in obj;
+}
+
+// Used to assert any database query return value as a Document
+export function assertDocument<T>(obj: T): T & nano.Document {
+    if (!isDocument(obj)) {
+        throw "WTF, a database query returned something that's not a document";
+    }
+    return obj;
 }
