@@ -72,7 +72,7 @@ On failure:
 
 ### Whoami
 
-Endpoint: `/auth/token`  
+Endpoint: `/user/whoami`  
 Method: `GET`  
 Authentication: Required  
 
