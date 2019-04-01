@@ -185,7 +185,7 @@ class AuthManager implements Component, AuthHandler {
     }
 
     // Retrieve a full `Token` from database by its id `accessToken`
-    public async findTokenById(accessToken: string): Promise<Token | undefined> {
+    public async findTokenById(accessToken: string): Promise<Token & nano.Document | undefined> {
         let res = await this.db.find({
             selector: {
                 accessToken: accessToken
@@ -194,7 +194,7 @@ class AuthManager implements Component, AuthHandler {
         if (res.docs == null || res.docs.length == 0) {
             return null;
         } else {
-            return this.deserializeToken(res.docs[0]);
+            return util.assertDocument(this.deserializeToken(res.docs[0]));
         }
     }
 

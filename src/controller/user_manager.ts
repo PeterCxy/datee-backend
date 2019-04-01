@@ -31,7 +31,7 @@ class UserManager implements Component {
 
     // Find a user by email
     // returns `undefined` if not found
-    public async findUserByEmail(email: string): Promise<User | undefined> {
+    public async findUserByEmail(email: string): Promise<User & nano.Document | undefined> {
         let res = await this.db.find({
             selector: {
                 email: email
@@ -40,7 +40,7 @@ class UserManager implements Component {
         if (res.docs == null || res.docs.length == 0) {
             return null;
         } else {
-            return res.docs[0];
+            return util.assertDocument(res.docs[0]);
         }
     }
 
@@ -48,7 +48,7 @@ class UserManager implements Component {
     // if the user is not found or the password is
     // incorrect, return null; otherwise return the
     // User object
-    public async verifyUserLogin(email: string, password: string): Promise<User | undefined> {
+    public async verifyUserLogin(email: string, password: string): Promise<User & nano.Document | undefined> {
         let user = await this.findUserByEmail(email);
         if (!user) {
             // User not found
@@ -63,7 +63,7 @@ class UserManager implements Component {
     }
 
     // Find a user by UUID
-    public async findUserById(uid: string): Promise<User | undefined> {
+    public async findUserById(uid: string): Promise<User & nano.Document | undefined> {
         let res = await this.db.find({
             selector: {
                 uid: uid
@@ -72,7 +72,7 @@ class UserManager implements Component {
         if (res.docs == null || res.docs.length == 0) {
             return null;
         } else {
-            return res.docs[0];
+            return util.assertDocument(res.docs[0]);
         }
     }
 
