@@ -1,5 +1,5 @@
 import { default as Server, Component, ComponentRouter } from "../server";
-import { Response } from "./shared";
+import { AutoResponse } from "./shared";
 import UserManagerAPI from "./user_manager_api";
 import AuthManager from "./auth_manager";
 import { default as User, UserInfo, State } from "../model/user";
@@ -146,35 +146,28 @@ class UserManager implements Component {
         }
     }
 
+    @AutoResponse
     private async register(
         req: TypedRequest<UserManagerAPI['/register']['PUT']>,
-    ): Promise<Response<void>> {
-        try {
-            util.checkProperties(req.body,
-                ["email", "firstName", "lastName", "password", "age",
-                 "gender", "country", "city"]);
-            await this.createUser(req.body, req.body.password);
-            return { ok: true };
-        } catch (err) {
-            return { ok: false, reason: err };
-        }
+    ): Promise<void> {
+        util.checkProperties(req.body,
+            ["email", "firstName", "lastName", "password", "age",
+             "gender", "country", "city"]);
+        await this.createUser(req.body, req.body.password);
     }
 
+    @AutoResponse
     private async whoami(
         req: TypedRequest<UserManagerAPI['/whoami']['GET']>,
         res: express.Response,
-    ): Promise<Response<User>> {
-        try {
-            let user = util.sanitizeDocument(await this.getCurrentUser(res));
-            // Additionally, we should sannitize the hash of password
-            delete user.passwordHash;
-            // Since this response is authenticated, so we can
-            // confidently send the entire User object back to
-            // the user.
-            return { ok: true, result: user };
-        } catch (err) {
-            return { ok: false, reason: err };
-        }
+    ): Promise<User> {
+        let user = util.sanitizeDocument(await this.getCurrentUser(res));
+        // Additionally, we should sannitize the hash of password
+        delete user.passwordHash;
+        // Since this response is authenticated, so we can
+        // confidently send the entire User object back to
+        // the user.
+        return user;
     }
 }
 
