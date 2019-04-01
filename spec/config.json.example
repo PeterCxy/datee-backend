@@ -1,0 +1,12 @@
+{
+    "couchdb": "http://username:password@127.0.0.1:5984",
+    "oauth_clients": {
+        "my_awesome_client": {
+            "secret": "my_awesome_secret",
+            "client": {
+                "id": "my_awesome_client",
+                "grants": ["password", "refresh_token"]
+            }
+        }
+    }
+}
