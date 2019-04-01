@@ -1,6 +1,6 @@
 // Check if `obj` has everything in `props`
 // Error is thrown if check failed
-export async function checkProperties(obj: any, props: string[]): Promise<void> {
+export function checkProperties(obj: any, props: string[]) {
     for (let p of props) {
         if (isEmpty(obj[p])) {
             throw `'${p}' is missing from the parameters`;

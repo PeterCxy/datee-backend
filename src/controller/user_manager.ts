@@ -111,7 +111,7 @@ class UserManager implements Component {
         req: TypedRequest<UserManagerAPI['/register']['PUT']>,
     ): Promise<Response<void>> {
         try {
-            await util.checkProperties(req.body,
+            util.checkProperties(req.body,
                 ["email", "firstName", "lastName", "password", "age",
                  "gender", "country", "city"]);
             await this.createUser(req.body, req.body.password);
