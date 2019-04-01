@@ -173,6 +173,17 @@ class AuthManager implements Component, AuthHandler {
         return 'refreshToken' in token;
     }
 
+    // Get the user ID in current authenticated request
+    // this should ONLY be called from those endpoints
+    // protected by this `AuthManager`
+    public async getCurrentUID(res: any): Promise<string> {
+        if (!('locals' in res) || !('oauth' in res.locals)
+            || !res.locals.oauth.token || !res.locals.oauth.token.accessToken) {
+            throw "WTF, an endpoint protected by AuthManager has no token";
+        }
+        return (await this.findTokenById(res.locals.oauth.token.accessToken)).user.id;
+    }
+
     private deserializeToken(token: Token): Token {
         // The dates cannot be deserialized from JSON automatically. We do it manually.
         if (token.accessTokenExpiresAt) {

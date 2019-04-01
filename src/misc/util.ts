@@ -38,3 +38,12 @@ export function assertDocument<T>(obj: T): T & nano.Document {
     }
     return obj;
 }
+
+// All database query results should be sanitized by this function
+// before sending over the internet.
+// IMPORTANT!!!!!
+export function sanitizeDocument<T>(doc: T & nano.Document): T {
+    delete doc._id;
+    delete doc._rev;
+    return doc;
+}

@@ -1,5 +1,5 @@
 import { Response } from "./shared";
-import { UserInfo } from "../model/user";
+import { UserInfo, default as User } from "../model/user";
 
 // Parameters for "/resgiter". Extended from basic UserInfo
 export interface RegisterInfo extends UserInfo {
@@ -14,6 +14,14 @@ export default interface UserManagerAPI {
             query: {},
             body: RegisterInfo,
             response: Response<void>
+        }
+    },
+    '/whoami': {
+        GET: {
+            params: {},
+            query: {},
+            body: {},
+            response: Response<User>
         }
     }
 }

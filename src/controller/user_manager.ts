@@ -1,6 +1,7 @@
 import { default as Server, Component, ComponentRouter } from "../server";
 import { Response } from "./shared";
 import UserManagerAPI from "./user_manager_api";
+import AuthManager from "./auth_manager";
 import { default as User, UserInfo, State } from "../model/user";
 import * as locality from "../model/locality";
 import * as util from "../misc/util";
@@ -23,6 +24,7 @@ class UserManager implements Component {
         let expressRouter = express.Router();
         let router = RestypedRouter<UserManagerAPI>(expressRouter);
         router.put("/register", this.register.bind(this));
+        router.get("/whoami", this.whoami.bind(this));
         return {
             mountpoint: "/user",
             router: expressRouter
@@ -74,6 +76,14 @@ class UserManager implements Component {
         } else {
             return util.assertDocument(res.docs[0]);
         }
+    }
+
+    // Get current user in this authenticated request
+    // this should ONLY be called from those endpoints
+    // protected by `AuthManager`
+    public async getCurrentUser(res: any): Promise<User & nano.Document> {
+        let uid = await AuthManager.getCurrentUID(res);
+        return await this.findUserById(uid);
     }
 
     // Create a new user
@@ -134,6 +144,23 @@ class UserManager implements Component {
                  "gender", "country", "city"]);
             await this.createUser(req.body, req.body.password);
             return { ok: true };
+        } catch (err) {
+            return { ok: false, reason: err };
+        }
+    }
+
+    private async whoami(
+        req: TypedRequest<UserManagerAPI['/whoami']['GET']>,
+        res: express.Response,
+    ): Promise<Response<User>> {
+        try {
+            let user = util.sanitizeDocument(await this.getCurrentUser(res));
+            // Additionally, we should sannitize the hash of password
+            delete user.passwordHash;
+            // Since this response is authenticated, so we can
+            // confidently send the entire User object back to
+            // the user.
+            return { ok: true, result: user };
         } catch (err) {
             return { ok: false, reason: err };
         }
