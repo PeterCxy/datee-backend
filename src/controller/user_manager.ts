@@ -1,5 +1,5 @@
 import { default as Server, Component, ComponentRouter } from "../server";
-import { autoResponse } from "./shared";
+import { Response, ExceptionToResponse } from "./shared";
 import UserManagerAPI from "./user_manager_api";
 import AuthManager from "./auth_manager";
 import { default as User, UserInfo, State } from "../model/user";
@@ -34,8 +34,8 @@ class UserManager implements Component {
         // Build the router
         let expressRouter = express.Router();
         let router = RestypedRouter<UserManagerAPI>(expressRouter);
-        router.put("/register", autoResponse(this.register.bind(this)));
-        router.get("/whoami", autoResponse(this.whoami.bind(this)));
+        router.put("/register", this.register.bind(this));
+        router.get("/whoami", this.whoami.bind(this));
         return {
             mountpoint: "/user",
             router: expressRouter
@@ -146,26 +146,29 @@ class UserManager implements Component {
         }
     }
 
+    @ExceptionToResponse
     private async register(
         req: TypedRequest<UserManagerAPI['/register']['PUT']>,
-    ): Promise<void> {
+    ): Promise<Response<void>> {
         util.checkProperties(req.body,
             ["email", "firstName", "lastName", "password", "age",
              "gender", "country", "city"]);
         await this.createUser(req.body, req.body.password);
+        return { ok: true };
     }
 
+    @ExceptionToResponse
     private async whoami(
         req: TypedRequest<UserManagerAPI['/whoami']['GET']>,
         res: express.Response,
-    ): Promise<User> {
+    ): Promise<Response<User>> {
         let user = util.sanitizeDocument(await this.getCurrentUser(res));
         // Additionally, we should sannitize the hash of password
         delete user.passwordHash;
         // Since this response is authenticated, so we can
         // confidently send the entire User object back to
         // the user.
-        return user;
+        return { ok: true, result: user };
     }
 }
 

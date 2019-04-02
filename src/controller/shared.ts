@@ -8,27 +8,28 @@ export interface Response<T> {
     result?: T,
 }
 
-// A wrapper to convert an async function to one that returns `Response`
+// A decorator to convert an async function to one that returns `Response`
 // so that all errors are catched and wrapped as `ok = false` while all
-// success values are `ok = true`. This way we don't have to write try..catch
+// success values are preserved. These functions are expected to return
+// "ok = true" by default on any non-exception case, and all the exceptions
+// should be thrown and handled by this decorator.
+// This way we don't have to write try..catch
 // for every freaking API endpoint.
-// Decorators won't work because they cannot change the signature of methods.
-// it will break the type checker.
 // NOTE: use this for every typed API endpoint.
-export function autoResponse<T extends RestypedRoute, U>(
-    fn: (req: TypedRequest<T>, res: express.Response) => Promise<U>
-): (req: TypedRequest<T>, res: express.Response) => Promise<Response<U>> {
-    return async function(req, res) {
-        let _this = this;
+export function ExceptionToResponse<T extends RestypedRoute, U>(
+    target: any, propertyKey: string, descriptor: PropertyDescriptor
+) {
+    let orig:
+        (req: TypedRequest<T>, res: express.Response)
+            => Promise<Response<U>> = descriptor.value;
+    descriptor.value = async function (
+        req: TypedRequest<T>, res: express.Response
+    ): Promise<Response<U>> {
         try {
-            let ret = await fn.apply(_this, [req, res]);
-            if (ret != null) {
-                return { ok: true, result: ret };
-            } else {
-                return { ok: true };
-            }
+            return await orig.apply(this, [req, res]);
         } catch (err) {
             return { ok: false, reason: err };
         }
     }
+
 }
