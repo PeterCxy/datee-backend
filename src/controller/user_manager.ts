@@ -1,5 +1,5 @@
 import { default as Server, Component, ComponentRouter } from "../server";
-import { AutoResponse } from "./shared";
+import { autoResponse } from "./shared";
 import UserManagerAPI from "./user_manager_api";
 import AuthManager from "./auth_manager";
 import { default as User, UserInfo, State } from "../model/user";
@@ -34,8 +34,8 @@ class UserManager implements Component {
         // Build the router
         let expressRouter = express.Router();
         let router = RestypedRouter<UserManagerAPI>(expressRouter);
-        router.put("/register", this.register.bind(this));
-        router.get("/whoami", this.whoami.bind(this));
+        router.put("/register", autoResponse(this.register.bind(this)));
+        router.get("/whoami", autoResponse(this.whoami.bind(this)));
         return {
             mountpoint: "/user",
             router: expressRouter
@@ -146,7 +146,6 @@ class UserManager implements Component {
         }
     }
 
-    @AutoResponse
     private async register(
         req: TypedRequest<UserManagerAPI['/register']['PUT']>,
     ): Promise<void> {
@@ -156,7 +155,6 @@ class UserManager implements Component {
         await this.createUser(req.body, req.body.password);
     }
 
-    @AutoResponse
     private async whoami(
         req: TypedRequest<UserManagerAPI['/whoami']['GET']>,
         res: express.Response,

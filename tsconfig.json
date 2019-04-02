@@ -5,6 +5,7 @@
         "target": "es6",
         "experimentalDecorators": true,
         "noImplicitAny": true,
+        "strictBindCallApply": true,
         "moduleResolution": "node",
         "sourceMap": true,
         "outDir": "lib",
