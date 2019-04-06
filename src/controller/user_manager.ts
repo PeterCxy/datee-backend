@@ -9,12 +9,6 @@ import nano from "nano";
 import uuid from "uuid/v5";
 import bcrypt from "bcrypt";
 
-// Parameters for "/resgiter". Extended from basic UserInfo
-interface RegisterInfo extends UserInfo {
-    // A password BEFORE hashing
-    password: string
-}
-
 class UserManager implements Component {
     private db: nano.DocumentScope<User>;
     constructor() {
@@ -103,28 +97,9 @@ class UserManager implements Component {
     // Create a new user
     // Errors are thrown if occured
     public async createUser(info: UserInfo, passwd: string): Promise<void> {
-        if (!util.validateEmail(info.email)) {
-            throw "Invalid email";
-        }
-        if (info.age < 18) {
-            throw "Too young and naïve";
-        }
-        if (info.age >= 60) {
-            throw "Too old";
-        }
-        if (info.gender < 0 || info.gender > 1) {
-            throw "Unrecognizable gender";
-        }
-        if (info.country < 0 || info.country >= locality.NUM_CONTRY) {
-            throw "Unrecognizable country";
-        }
-        if (info.city < 0 || info.city >= locality.NUM_CITY) {
-            throw "Unrecognizable city";
-        }
         if ((await this.findUserByEmail(info.email)) != null) {
             throw "User already exists";
         }
-        util.checkPassword(passwd);
         // Create a useable UUID
         let id;
         do {
@@ -153,9 +128,7 @@ class UserManager implements Component {
     private async register(
         req: express.Request,
     ): Promise<Response<void>> {
-        if (!util.checkProperties<RegisterInfo>(req.body,
-            ["email", "firstName", "lastName", "password", "age",
-             "gender", "country", "city"])) return;
+        if (!util.checkProperties(req.body, RegisterInfoChecker)) return;
         await this.createUser(req.body, req.body.password);
         return { ok: true };
     }
@@ -176,3 +149,73 @@ class UserManager implements Component {
 }
 
 export default new UserManager();
+
+// Parameters for "/resgiter". Extended from basic UserInfo
+interface RegisterInfo extends UserInfo {
+    // A password BEFORE hashing
+    password: string
+}
+
+const RegisterInfoChecker: util.PropertyChecker<RegisterInfo> = {
+    email: {
+        optional: false,
+        type: "string",
+        checker: (obj: string) => {
+            if (!util.validateEmail(obj)) {
+                throw "Invalid email";
+            }
+        }
+    },
+    firstName: {
+        optional: false,
+        type: "string"
+    },
+    lastName: {
+        optional: false,
+        type: "string"
+    },
+    password: {
+        optional: false,
+        type: "string",
+        checker: util.checkPassword
+    },
+    age: {
+        optional: false,
+        type: "number",
+        checker: (obj: number) => {
+            if (obj < 18) {
+                throw "Too young and naïve";
+            }
+            if (obj >= 60) {
+                throw "Too old";
+            }
+        }
+    },
+    gender: {
+        optional: false,
+        type: "number",
+        checker: (obj: number) => {
+            if (obj < 0 || obj > 1) {
+                throw "Unrecognizable gender";
+            }
+        }
+    },
+    country: {
+        optional: false,
+        type: "number",
+        checker: (obj: number) => {
+            if (obj < 0 || obj >= locality.NUM_CONTRY) {
+                throw "Unrecognizable country";
+            }
+        }
+    },
+    city: {
+        optional: false,
+        type: "number",
+        checker: (obj: number) => {
+            if (obj < 0 || obj >= locality.NUM_CITY) {
+                throw "Unrecognizable city";
+            }
+        }
+    }
+}

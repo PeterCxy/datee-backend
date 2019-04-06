@@ -1,11 +1,40 @@
 import nano from "nano";
 
+export type PropertyChecker<T> = {
+    [P in keyof T]: {
+        optional: boolean,
+        type?: string,
+        checker?: (obj: any) => void // Errors should be thrown as exception
+    }
+}
+
 // Check if `obj` has everything in `props`
 // Error is thrown if check failed
-export function checkProperties<T>(obj: any, props: string[]): obj is T {
-    for (let p of props) {
-        if (isEmpty(obj[p])) {
+export function checkProperties<T>(obj: any, props: PropertyChecker<T>): obj is T {
+    for (let p in props) {
+        let def = props[p];
+        if (isEmpty(obj[p]) && !def.optional) {
             throw `'${p}' is missing from the parameters`;
+        }
+
+        if (def.type != null && typeof obj[p] != def.type) {
+            if (def.type == "number") {
+                obj[p] = Number.parseInt(obj[p]);
+            } else if (def.type == "boolean") {
+                if (typeof obj[p] == "string") {
+                    obj[p] = obj[p] == "true";
+                } else if (typeof obj[p] == "number") {
+                    obj[p] = !!obj[p];
+                } else {
+                    throw `'${p}': '${def.type}' cannot be parsed as boolean`;
+                }
+            } else {
+                throw `'${p}' expected to be '${def.type}' but actually '${typeof obj[p]}'`;
+            }
+        }
+
+        if (def.checker != null) {
+            def.checker(obj[p]);
         }
     }
     return true;

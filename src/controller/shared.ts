@@ -22,11 +22,11 @@ export function ExceptionToResponse<U>(
             => Promise<Response<U>> = descriptor.value;
     descriptor.value = async function (
         req: express.Request, res: express.Response
-    ): Promise<Response<U>> {
+    ): Promise<void> {
         try {
-            return await orig.apply(this, [req, res]);
+            res.send(JSON.stringify(await orig.apply(this, [req, res])));
         } catch (err) {
-            return { ok: false, reason: err };
+            res.status(400).send(JSON.stringify({ ok: false, reason: err }));
         }
     }
 
