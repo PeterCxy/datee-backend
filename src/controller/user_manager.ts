@@ -128,6 +128,9 @@ class UserManager implements Component {
     private async register(
         req: express.Request,
     ): Promise<Response<void>> {
+        // Errors will be thrown directly from checkProperties()
+        // here we use if just to trick TypeScript to make the
+        // type assertion work.
         if (!util.checkProperties(req.body, RegisterInfoChecker)) return;
         await this.createUser(req.body, req.body.password);
         return { ok: true };
