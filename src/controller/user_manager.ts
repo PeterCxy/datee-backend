@@ -6,7 +6,7 @@ import * as locality from "../model/locality";
 import * as util from "../misc/util";
 import express from "express";
 import nano from "nano";
-import uuid from "uuid/v5";
+import uuid from "uuid/v4";
 import bcrypt from "bcrypt";
 
 class UserManager implements Component {
@@ -103,7 +103,7 @@ class UserManager implements Component {
         // Create a useable UUID
         let id;
         do {
-            id = uuid("dat.ee", uuid.DNS);
+            id = uuid();
         } while ((await this.findUserById(id) != null));
 
         let user: User = {
