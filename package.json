@@ -35,7 +35,6 @@
     "express-oauth-server": "^2.0.0",
     "nano": "^8.0.1",
     "oauth2-server": "^3.0.1",
-    "restyped-express-async": "^0.6.1",
     "uuid": "^3.3.2"
   }
 }

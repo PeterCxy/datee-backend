@@ -1,5 +1,3 @@
-import { TypedRequest } from "restyped-express-async";
-import { RestypedRoute } from "restyped";
 import express from "express";
 
 export interface Response<T> {
@@ -16,14 +14,14 @@ export interface Response<T> {
 // This way we don't have to write try..catch
 // for every freaking API endpoint.
 // NOTE: use this for every typed API endpoint.
-export function ExceptionToResponse<T extends RestypedRoute, U>(
+export function ExceptionToResponse<U>(
     target: any, propertyKey: string, descriptor: PropertyDescriptor
 ) {
     let orig:
-        (req: TypedRequest<T>, res: express.Response)
+        (req: express.Request, res: express.Response)
             => Promise<Response<U>> = descriptor.value;
     descriptor.value = async function (
-        req: TypedRequest<T>, res: express.Response
+        req: express.Request, res: express.Response
     ): Promise<Response<U>> {
         try {
             return await orig.apply(this, [req, res]);

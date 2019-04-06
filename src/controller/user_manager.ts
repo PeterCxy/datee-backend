@@ -1,15 +1,19 @@
 import { default as Server, Component, ComponentRouter } from "../server";
 import { Response, ExceptionToResponse } from "./shared";
-import UserManagerAPI from "./user_manager_api";
 import AuthManager from "./auth_manager";
 import { default as User, UserInfo, State } from "../model/user";
 import * as locality from "../model/locality";
 import * as util from "../misc/util";
-import { default as RestypedRouter, TypedRequest } from 'restyped-express-async'
 import express from "express";
 import nano from "nano";
 import uuid from "uuid/v5";
 import bcrypt from "bcrypt";
+
+// Parameters for "/resgiter". Extended from basic UserInfo
+interface RegisterInfo extends UserInfo {
+    // A password BEFORE hashing
+    password: string
+}
 
 class UserManager implements Component {
     private db: nano.DocumentScope<User>;
@@ -32,13 +36,12 @@ class UserManager implements Component {
         // Initialize the database here because it is async
         await this.initializeDb();
         // Build the router
-        let expressRouter = express.Router();
-        let router = RestypedRouter<UserManagerAPI>(expressRouter);
+        let router = express.Router();
         router.put("/register", this.register.bind(this));
         router.get("/whoami", this.whoami.bind(this));
         return {
             mountpoint: "/user",
-            router: expressRouter
+            router: router
         };
     }
 
@@ -148,18 +151,18 @@ class UserManager implements Component {
 
     @ExceptionToResponse
     private async register(
-        req: TypedRequest<UserManagerAPI['/register']['PUT']>,
+        req: express.Request,
     ): Promise<Response<void>> {
-        util.checkProperties(req.body,
+        if (!util.checkProperties<RegisterInfo>(req.body,
             ["email", "firstName", "lastName", "password", "age",
-             "gender", "country", "city"]);
+             "gender", "country", "city"])) return;
         await this.createUser(req.body, req.body.password);
         return { ok: true };
     }
 
     @ExceptionToResponse
     private async whoami(
-        req: TypedRequest<UserManagerAPI['/whoami']['GET']>,
+        req: express.Request,
         res: express.Response,
     ): Promise<Response<User>> {
         let user = util.sanitizeDocument(await this.getCurrentUser(res));

@@ -2,12 +2,13 @@ import nano from "nano";
 
 // Check if `obj` has everything in `props`
 // Error is thrown if check failed
-export function checkProperties(obj: any, props: string[]) {
+export function checkProperties<T>(obj: any, props: string[]): obj is T {
     for (let p of props) {
         if (isEmpty(obj[p])) {
             throw `'${p}' is missing from the parameters`;
         }
     }
+    return true;
 }
 
 export function isEmpty(obj: any): boolean {
