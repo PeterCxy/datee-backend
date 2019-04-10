@@ -2,6 +2,7 @@ import { default as Server, Component, ComponentRouter } from "../server";
 import { Response, ExceptionToResponse } from "./shared";
 import UserManager from "./user_manager";
 import { default as User, State } from "../model/user";
+import Photo from "../model/photo";
 import * as util from "../misc/util";
 import nano from "nano";
 import express from "express";
@@ -10,11 +11,6 @@ import uuid from "uuid/v4";
 
 const MAX_PHOTOS_PER_USER = 10;
 const MIN_PHOTOS_PER_USER = 3;
-
-export interface Photo {
-    id: string, // The ID of the photo
-    uid: string, // The user the photo belongs to
-}
 
 /**
  * This `PhotoManager` is responsible for managing profile photos
