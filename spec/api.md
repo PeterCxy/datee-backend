@@ -96,3 +96,63 @@ Response:
 ```
 
 The meaning of all the fields in `result` are already described above in the `Register` API.
+
+### Photo Upload
+
+Endpoint: `/photos/upload`  
+Method: `PUT`  
+Authentication: Required  
+Parameters:
+
+This request should be of type `multipart/form-data` (the way we upload files by forms). The only parameter should be the content of the file, with name `photo`.
+
+Notes:
+
+The MIME type of the uploaded file must be `image/*`, otherwise it will be rejected.
+
+If the user uploads more than `MAX_PHOTOS_PER_USER` photos, then any future uploads will be rejected.
+
+If the user's state is `Registered` and uploaded more than `MIN_PHOTOS_PER_USER` photos, then the state will be updated to `PhotoUploaded`.
+
+Response:
+
+```json
+{
+    "ok": true,
+    "result": {
+        "id": "<photo id>",
+        "uid": "<user id>"
+    }
+}
+```
+
+### Photo Listing
+
+Endpoint: `/photos/list/<uid>`  
+Method: `GET`  
+Parameters: None  
+Authentication: Required  
+Note:
+
+Replace `<uid>` with the target user ID.
+
+Response:
+
+```json
+{
+    "ok": true,
+    "result": ["<photo id 1>", "<photo id 2>", ...]
+}
+```
+
+### Photo Fetching
+
+Endpoint: `/photo/<id>`  
+Method: `GET`  
+Parameters: None  
+Authentication: Required  
+Notes:
+
+Replace `<id>` with the ID of the photo to fetch
+
+Response: The binary file data of the photo. MIME type is set in the header, so we don't need to determine file type from extension.

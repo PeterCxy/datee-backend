@@ -94,6 +94,25 @@ class UserManager implements Component {
         return await this.findUserById(uid);
     }
 
+    // Update the information of a user (the user must be previously fetched from db)
+    // Note: the `user` object should normally be the visiting user himself
+    // DO NOT modify user infortion without authentication
+    // The user object WILL BE MODIFIED, so please replace it with the 
+    // return value of this function
+    public async updateUser(user: User & nano.Document): Promise<User & nano.Document> {
+        if ((await this.findUserById(user.uid)) == null) {
+            throw "User " + user.uid + " not found in database.";
+        }
+        // If the original object is a `Document` (contains "_rev")
+        // then this will be an update operation
+        let res = await this.db.insert(user);
+        if (!res.ok) {
+            throw "Failed to update user in database";
+        }
+
+        return await this.findUserById(user.uid);
+    }
+
     // Create a new user
     // Errors are thrown if occured
     public async createUser(info: UserInfo, passwd: string): Promise<void> {

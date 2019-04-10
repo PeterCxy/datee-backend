@@ -44,4 +44,6 @@ export enum Gender {
 export enum State {
     // Default state after registration
     Registered = 0,
+    // After uploading minimum photos
+    PhotoUploaded,
 }

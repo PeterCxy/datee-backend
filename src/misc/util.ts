@@ -75,5 +75,8 @@ export function assertDocument<T>(obj: T): T & nano.Document {
 export function sanitizeDocument<T>(doc: T & nano.Document): T {
     delete doc._id;
     delete doc._rev;
+    if (doc.hasOwnProperty("_attachments")) {
+        delete (doc as any)['_attachments'];
+    }
     return doc;
 }
