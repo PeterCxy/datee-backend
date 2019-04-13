@@ -147,7 +147,7 @@ Response:
 
 ### Photo Fetching
 
-Endpoint: `/photo/<id>`  
+Endpoint: `/photos/<id>`  
 Method: `GET`  
 Parameters: None  
 Authentication: Required  
