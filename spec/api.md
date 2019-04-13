@@ -156,3 +156,46 @@ Notes:
 Replace `<id>` with the ID of the photo to fetch
 
 Response: The binary file data of the photo. MIME type is set in the header, so we don't need to determine file type from extension.
+
+### Photo Deleting
+
+Endpoint: `/photos/<id>`  
+Method: `DELETE`  
+Parameters: None  
+Authentication: Required  
+Notes:
+
+Replace `<id>` with the ID of the photo to delete.
+
+Please note that a user cannot delete any more photos when the number of photos has reached the minimum. Use replace instead.
+
+Response: ok or not.
+
+### Photo Replacing
+
+Endpoint: `/photos/<id>`  
+Method: `PATCH`  
+Authentication: Required  
+Parameters:
+
+This request should be of type `multipart/form-data` (the way we upload files by forms). The only parameter should be the content of the file, with name `photo`.
+
+Notes:
+
+Replace `<id>` with the ID of the photo to replace.
+
+Replacing a photo = Deleting + Re-uploading, without the limitation that the user cannot delete any photo when the number of photos have reached the minimum.
+
+Note that the photo ID WILL CHANGE after this method.
+
+Response:
+
+```json
+{
+    "ok": true,
+    "result": {
+        "id": "<photo id>",
+        "uid": "<user id>"
+    }
+}
+```
