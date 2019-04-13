@@ -43,6 +43,7 @@ class PhotoManager implements Component {
         router.get("/list/:uid", this.listPhotos.bind(this));
         router.get("/:id", this.streamPhoto.bind(this));
         router.delete("/:id", this.deletePhoto.bind(this));
+        router.patch("/:id", multerMiddleware.single('photo'), this.replacePhoto.bind(this));
         return {
             mountpoint: "/photos",
             router: router
@@ -135,6 +136,23 @@ class PhotoManager implements Component {
         }
     }
 
+    public async replacePhotoById(
+        user: User & nano.Document, id: string,
+        data: Buffer, mime: string
+    ): Promise<Photo & nano.Document> {
+        // Delete the old one first
+        let photo = await this.findPhotoById(id);
+        if (photo == null) {
+            throw "Photo not found";
+        } else if (photo.uid != user.uid) {
+            throw "Can only replace photo of yourself";
+        }
+        // Just delete without checking at all
+        await this.db.destroy(photo._id, photo._rev);
+        // Create a new one as normal
+        return await this.addPhoto(user, data, mime);
+    }
+
     // Users can only upload photos for themselves
     @ExceptionToResponse
     private async uploadPhoto(
@@ -162,6 +180,25 @@ class PhotoManager implements Component {
         let user = await UserManager.getCurrentUser(res);
         await this.removePhotoById(user.uid, req.params["id"]);
         return { ok: true };
+    }
+
+    // Replace = delete + upload but without the limitation
+    // that user cannot delete more when minimum has been reached.
+    // Note that the photo ID WILL CHANGE.
+    @ExceptionToResponse
+    private async replacePhoto(
+        req: express.Request, res: express.Response
+    ): Promise<Response<Photo>> {
+        // If no file, or field name is wrong,
+        // or the MIME type indicates a non-picture,
+        // throw an error.
+        if (!req.file || !req.file.mimetype.startsWith("image/")) {
+            throw "Request must contain exactly one photo file";
+        }
+        let user = await UserManager.getCurrentUser(res);
+        let newPhoto =
+            await this.replacePhotoById(user, req.params["id"], req.file.buffer, req.file.mimetype);
+        return { ok: true, result: util.sanitizeDocument(newPhoto) };
     }
 
     // Not a trivial API, we stream the resulting photo to the client
