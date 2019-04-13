@@ -42,6 +42,7 @@ class PhotoManager implements Component {
         router.put("/upload", multerMiddleware.single('photo'), this.uploadPhoto.bind(this));
         router.get("/list/:uid", this.listPhotos.bind(this));
         router.get("/:id", this.streamPhoto.bind(this));
+        router.delete("/:id", this.deletePhoto.bind(this));
         return {
             mountpoint: "/photos",
             router: router
@@ -118,6 +119,22 @@ class PhotoManager implements Component {
         return await this.findPhotoById(id);
     }
 
+    public async removePhotoById(uid: string, id: string): Promise<void> {
+        if ((await this.getPhotosForUser(uid)).length <= MIN_PHOTOS_PER_USER) {
+            throw "Reached minimum number of photos, please replace instead of delete";
+        }
+        let photo = await this.findPhotoById(id);
+        if (photo == null) {
+            throw "Photo not found";
+        } else if (photo.uid != uid) {
+            throw "Can only delete photo of yourself";
+        }
+        let res = await this.db.destroy(photo._id, photo._rev);
+        if (!res.ok) {
+            throw "Database error";
+        }
+    }
+
     // Users can only upload photos for themselves
     @ExceptionToResponse
     private async uploadPhoto(
@@ -138,6 +155,13 @@ class PhotoManager implements Component {
     private async listPhotos(req: express.Request): Promise<Response<string[]>> {
         let photos = await this.getPhotosForUser(req.params["uid"]);
         return { ok:true, result: photos.map((val) => val.id)};
+    }
+
+    @ExceptionToResponse
+    private async deletePhoto(req: express.Request, res: express.Response): Promise<Response<void>> {
+        let user = await UserManager.getCurrentUser(res);
+        await this.removePhotoById(user.uid, req.params["id"]);
+        return { ok: true };
     }
 
     // Not a trivial API, we stream the resulting photo to the client
