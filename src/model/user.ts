@@ -28,6 +28,10 @@ export default interface User extends UserInfo {
     // Hashed password. See UserManager
     // for how the password should be hashed
     passwordHash: string
+    // What the user consider themself to be
+    selfAssessment?: SelfAssessment,
+    // What the user expect their partner to be
+    matchingPref?: MatchingPreference,
     // Internal state of the user
     // used by the Datee state machine
     state: State
@@ -46,4 +50,25 @@ export enum State {
     Registered = 0,
     // After uploading minimum photos
     PhotoUploaded,
+    // After finishing self-assessment
+    SelfAssessmentDone,
+    // After finishing setting preferences
+    MatchingPreferencesSet,
+    // TODO: Verified, Idle, Matched, Dated, etc...
+}
+
+export interface UserTraits {
+    romance: number,
+    openness: number,
+    warmheartedness: number,
+}
+
+export interface SelfAssessment extends UserTraits {
+
+}
+
+export interface MatchingPreference extends UserTraits {
+    gender: Gender,
+    maxAge: number,
+    minAge: number,
 }

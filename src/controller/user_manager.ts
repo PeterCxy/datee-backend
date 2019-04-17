@@ -1,7 +1,8 @@
 import { default as Server, Component, ComponentRouter } from "../server";
 import { Response, ExceptionToResponse } from "./shared";
 import AuthManager from "./auth_manager";
-import { default as User, UserInfo, State } from "../model/user";
+import { default as User, UserInfo, State, UserTraits,
+    SelfAssessment, MatchingPreference } from "../model/user";
 import * as locality from "../model/locality";
 import * as util from "../misc/util";
 import express from "express";
@@ -33,6 +34,8 @@ class UserManager implements Component {
         let router = express.Router();
         router.put("/register", this.register.bind(this));
         router.get("/whoami", this.whoami.bind(this));
+        router.put("/self_assessment", this.setSelfAssessment.bind(this));
+        router.put("/matching_pref", this.setMatchingPreferences.bind(this));
         return {
             mountpoint: "/user",
             router: router
@@ -143,6 +146,13 @@ class UserManager implements Component {
         }
     }
 
+    private sanitizeUser(user: User): User {
+        delete user.passwordHash;
+        delete user.matchingPref;
+        delete user.selfAssessment;
+        return user;
+    }
+
     @ExceptionToResponse
     private async register(
         req: express.Request,
@@ -161,12 +171,49 @@ class UserManager implements Component {
         res: express.Response,
     ): Promise<Response<User>> {
         let user = util.sanitizeDocument(await this.getCurrentUser(res));
-        // Additionally, we should sannitize the hash of password
-        delete user.passwordHash;
+        user = this.sanitizeUser(user);
         // Since this response is authenticated, so we can
         // confidently send the entire User object back to
         // the user.
         return { ok: true, result: user };
+    }
+
+    @ExceptionToResponse
+    private async setSelfAssessment(
+        req: express.Request,
+        res: express.Response
+    ): Promise<Response<void>> {
+        if (!util.checkProperties(req.body, SelfAssessmentChecker)) return;
+        let user = await this.getCurrentUser(res);
+        if (user.state < State.PhotoUploaded) {
+            throw "Please upload photo first";
+        }
+        user.selfAssessment = req.body;
+        if (user.state == State.PhotoUploaded) {
+            // Update the state accordingly
+            user.state = State.SelfAssessmentDone;
+        }
+        await this.updateUser(user);
+        return { ok: true };
+    }
+
+    @ExceptionToResponse
+    private async setMatchingPreferences(
+        req: express.Request,
+        res: express.Response
+    ): Promise<Response<void>> {
+        if (!util.checkProperties(req.body, MatchingPreferenceChecker)) return;
+        let user = await this.getCurrentUser(res);
+        if (user.state < State.SelfAssessmentDone) {
+            throw "Please set self assessments first";
+        }
+        user.matchingPref = req.body;
+        if (user.state == State.SelfAssessmentDone) {
+            // Update the state accordingly
+            user.state = State.MatchingPreferencesSet;
+        }
+        await this.updateUser(user);
+        return { ok: true };
     }
 }
 
@@ -176,6 +223,21 @@ export default new UserManager();
 interface RegisterInfo extends UserInfo {
     // A password BEFORE hashing
     password: string
+}
+
+function ageChecker(age: number) {
+    if (age < 18) {
+        throw "Too young and naïve";
+    }
+    if (age >= 60) {
+        throw "Too old";
+    }
+}
+
+function genderChecker(gender: number) {
+    if (gender < 0 || gender > 1) {
+        throw "Unrecognizable gender";
+    }
 }
 
 const RegisterInfoChecker: util.PropertyChecker<RegisterInfo> = {
@@ -204,23 +266,12 @@ const RegisterInfoChecker: util.PropertyChecker<RegisterInfo> = {
     age: {
         optional: false,
         type: "number",
-        checker: (obj: number) => {
-            if (obj < 18) {
-                throw "Too young and naïve";
-            }
-            if (obj >= 60) {
-                throw "Too old";
-            }
-        }
+        checker: ageChecker
     },
     gender: {
         optional: false,
         type: "number",
-        checker: (obj: number) => {
-            if (obj < 0 || obj > 1) {
-                throw "Unrecognizable gender";
-            }
-        }
+        checker: genderChecker
     },
     country: {
         optional: false,
@@ -241,3 +292,47 @@ const RegisterInfoChecker: util.PropertyChecker<RegisterInfo> = {
         }
     }
 }
+
+function scoreChecker(num: number) {
+    if (num <= 0 || num > 5) {
+        throw "Illegal score " + num;
+    }
+}
+
+const UserTraitsChecker: util.PropertyChecker<UserTraits> = {
+    romance: {
+        optional: false,
+        type: "number",
+        checker: scoreChecker
+    },
+    openness: {
+        optional: false,
+        type: "number",
+        checker: scoreChecker
+    },
+    warmheartedness: {
+        optional: false,
+        type: "number",
+        checker: scoreChecker
+    }
+};
+
+const SelfAssessmentChecker: util.PropertyChecker<SelfAssessment> = Object.assign({...UserTraitsChecker}, {});
+
+const MatchingPreferenceChecker: util.PropertyChecker<MatchingPreference> = Object.assign({...UserTraitsChecker}, {
+    gender: {
+        optional: false,
+        type: "number",
+        checker: genderChecker
+    },
+    maxAge: {
+        optional: false,
+        type: "number",
+        checker: ageChecker
+    },
+    minAge: {
+        optional: false,
+        type: "number",
+        checker: ageChecker
+    }
+});

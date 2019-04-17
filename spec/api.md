@@ -199,3 +199,11 @@ Response:
     }
 }
 ```
+
+### Self Assessment / Matching Preferences
+
+Endpoint: `/user/self_assessment` / `/user/matching_pref`  
+Method: `PUT`  
+Authentication: Required  
+Parameters: See `src/model/user.ts` for details  
+Return: ok or not
