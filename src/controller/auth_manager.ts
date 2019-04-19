@@ -8,12 +8,6 @@ import OAuthServer from "express-oauth-server";
 import nano from "nano";
 import express from "express";
 
-// Exhaustive list of API paths that are excluded from authentication
-const AUTH_EXCLUDED_PATHS = [
-    "/user/register",
-    "/auth/token"
-];
-
 /**
  * OAuth implementation of Dat.ee. Users are authenticated by
  * email + password, where all the `username` in the OAuth2
@@ -29,6 +23,7 @@ const AUTH_EXCLUDED_PATHS = [
  */
 class AuthManager implements Component, AuthHandler {
     private db: nano.DocumentScope<Token>;
+    private excludedPaths: string[] = [];
     private authServer: OAuthServer;
     // OAuth2 model implementing the password grant
     private authModel = new class implements PasswordModel, RefreshTokenModel {
@@ -160,6 +155,8 @@ class AuthManager implements Component, AuthHandler {
     public async setupRoutes(): Promise<ComponentRouter> {
         await this.initializeDb();
         let expressRouter = express.Router();
+        // The `token` path does not need to be authenticated
+        this.excludePath("/auth/token");
         expressRouter.use("/token", this.authServer.token());
         return {
             mountpoint: "/auth",
@@ -167,10 +164,14 @@ class AuthManager implements Component, AuthHandler {
         };
     }
 
+    public excludePath(p: string) {
+        this.excludedPaths.push(p);
+    }
+
     public getAuthMiddleware(): express.RequestHandler {
         let authenticationMiddleware = this.authServer.authenticate();
         return (req, res, next) => {
-            if (AUTH_EXCLUDED_PATHS.indexOf(req.path) >= 0) {
+            if (this.excludedPaths.indexOf(req.path) >= 0) {
                 // Some paths do not need authentication at all
                 return next();
             } else {

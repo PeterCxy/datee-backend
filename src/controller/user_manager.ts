@@ -32,6 +32,8 @@ class UserManager implements Component {
         await this.initializeDb();
         // Build the router
         let router = express.Router();
+        // Registration doesn't need to be authenticated
+        AuthManager.excludePath("/user/register");
         router.put("/register", this.register.bind(this));
         router.get("/whoami", this.whoami.bind(this));
         router.put("/self_assessment", this.setSelfAssessment.bind(this));
