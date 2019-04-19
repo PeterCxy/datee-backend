@@ -4,6 +4,7 @@ import bodyParser from "body-parser";
 import nano from "nano";
 
 interface ServerConfig {
+    admin_token: string,
     couchdb: string,
     oauth_clients: OAuthClients
 }
@@ -73,6 +74,10 @@ class DateeServer {
 
     public getConfig(): ServerConfig {
         return this.config;
+    }
+
+    public verifyAdminPassword(passwd: string): boolean {
+        return passwd === this.config.admin_token;
     }
 
     // Get a database object from CouchDB

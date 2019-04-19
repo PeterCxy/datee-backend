@@ -2,3 +2,4 @@
 import "./user_manager";
 import "./auth_manager";
 import "./photo_manager";
+import "./admin";

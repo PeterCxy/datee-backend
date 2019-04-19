@@ -54,6 +54,8 @@ export enum State {
     SelfAssessmentDone,
     // After finishing setting preferences
     MatchingPreferencesSet,
+    // Waiting to be matched
+    Idle,
     // TODO: Verified, Idle, Matched, Dated, etc...
 }
 

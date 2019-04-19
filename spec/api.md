@@ -207,3 +207,20 @@ Method: `PUT`
 Authentication: Required  
 Parameters: See `src/model/user.ts` for details  
 Return: ok or not
+
+---
+Admin APIs
+---
+
+Admin API endpoints are located in `/admin` and require authentication via the `admin_token` in `config.json`. The token should be provided in the `Authorization` header field.
+
+### Account Approval
+
+Endpoint: `/admin/activate`  
+Method: `POST`  
+Parameters: `uid=<user_id>`  
+Return: ok or not
+
+### Matching Trigger
+
+TO BE DONE
