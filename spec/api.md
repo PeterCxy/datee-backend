@@ -219,7 +219,7 @@ Return: ok or not
 ### Get self rated score
 
 Endpoint: `/rate/my`  
-Method: `GET`
+Method: `GET`  
 Authentication: Required  
 Return:
 
