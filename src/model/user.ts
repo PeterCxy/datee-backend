@@ -74,3 +74,9 @@ export interface MatchingPreference extends UserTraits {
     maxAge: number,
     minAge: number,
 }
+
+export interface Rating {
+    rater_uid: string,
+    ratee_uid: string,
+    score: number, // integer within [1, 5]
+}
