@@ -20,6 +20,7 @@ class Admin implements Component {
         // Everything here is excluded from the normal authentication
         // pipeline, we implement our own authentication middleware
         AuthManager.excludePath("/admin/activate");
+        AuthManager.excludePath("/admin/do_match");
         router.use((req, res, next) => {
             if (req.ip != '127.0.0.1' && req.ip != '::ffff:127.0.0.1') {
                 res.sendStatus(401);
@@ -35,6 +36,7 @@ class Admin implements Component {
         });
         // The actual routes
         router.post("/activate", this.activateUser.bind(this));
+        router.get("/do_match", this.doMatch.bind(this));
         return {
             mountpoint: "/admin",
             router: router
@@ -56,6 +58,13 @@ class Admin implements Component {
         }
         user.state = State.Idle;
         await UserManager.updateUser(user);
+        return { ok: true };
+    }
+
+    // TODO: Implement the matching algorithm here!!!
+    @ExceptionToResponse
+    private async doMatch(): Promise<Response<void>> {
+        // fill in here
         return { ok: true };
     }
 }

@@ -245,4 +245,8 @@ Return: ok or not
 
 ### Matching Trigger
 
-TO BE DONE
+Endpoint: `/admin/do_match`  
+Method: `GET`  
+Parameters: None  
+Return: ok or not  
+Note: This is the trigger for the matching algorithm. This should be triggered by some timer to ensure it runs and only runs once per day.
