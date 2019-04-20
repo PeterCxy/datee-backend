@@ -130,7 +130,13 @@ class UserManager implements Component {
             id = uuid();
         } while ((await this.findUserById(id) != null));
 
-        let user: User = {
+        let user: User & nano.MaybeDocument = {
+            // The create operation is not atomic
+            // Parallel requests might pass the duplication check
+            // simultaneously, causing repeated insertion.
+            // We use a unique CouchDB `_id` to fix this problem.
+            // Two simultaneous requests with the same `_id` will fail.
+            _id: util.sha256(info.email),
             uid: id,
             passwordHash: await bcrypt.hash(passwd, 10),
             email: info.email,

@@ -1,4 +1,5 @@
 import nano from "nano";
+import crypto from "crypto";
 
 export type PropertyChecker<T> = {
     [P in keyof T]: {
@@ -79,4 +80,10 @@ export function sanitizeDocument<T>(doc: T & nano.Document): T {
         delete (doc as any)['_attachments'];
     }
     return doc;
+}
+
+export function sha256(str: string): string {
+    return crypto.createHash("sha256")
+        .update(str)
+        .digest("hex");
 }

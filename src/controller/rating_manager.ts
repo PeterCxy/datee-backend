@@ -3,6 +3,7 @@ import { Response, ExceptionToResponse } from "./shared";
 import AuthManager from "./auth_manager";
 import UserManager from "./user_manager";
 import { Rating } from "../model/user";
+import * as util from "../misc/util";
 import express from "express";
 import nano from "nano";
 
@@ -48,7 +49,7 @@ class RatingManager implements Component {
             throw "Unknown rater or ratee";
         }
 
-        let ratingObj: Rating;
+        let ratingObj: Rating & nano.MaybeDocument;
         let res1 = await this.db.find({
             selector: {
                 rater_uid: rater,
@@ -62,6 +63,12 @@ class RatingManager implements Component {
             ratingObj.score = score;
         } else {
             ratingObj = {
+                // The create operation is not atomic
+                // Parallel requests might pass the duplication check
+                // simultaneously, causing repeated insertion.
+                // We use a unique CouchDB `_id` to fix this problem.
+                // Two simultaneous requests with the same `_id` will fail.
+                _id: util.sha256(rater + ratee),
                 rater_uid: rater,
                 ratee_uid: ratee,
                 score: score,
