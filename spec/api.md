@@ -208,6 +208,28 @@ Authentication: Required
 Parameters: See `src/model/user.ts` for details  
 Return: ok or not
 
+### Rate another user
+
+Endpoint: `/rate/<uid>`  
+Method: `PUT`  
+Authentication: Required  
+Parameters: `score=<score>` ([1, 5])  
+Return: ok or not
+
+### Get self rated score
+
+Endpoint: `/rate/my`  
+Method: `GET`
+Authentication: Required  
+Return:
+
+```json
+{
+    "ok": true,
+    "result": <rating_score>
+}
+```
+
 ---
 Admin APIs
 ---
