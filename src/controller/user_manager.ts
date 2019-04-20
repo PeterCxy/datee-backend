@@ -20,7 +20,7 @@ class UserManager implements Component {
         this.db = await Server.getDatabase("users");
         await this.db.createIndex({
             index: {
-                fields: ["uid", "email"],
+                fields: ["uid", "email", "state"],
             },
             ddoc: "indexUser",
             name: "indexUser"
@@ -151,6 +151,25 @@ class UserManager implements Component {
         let res = await this.db.insert(user);
         if (!res.ok) {
             throw "Database failure";
+        }
+    }
+
+    // Intended for use in the matching algorithm
+    // TODO: Limit the return value of this function
+    //       to ONLY those who have made >=5 ratings and
+    //       have been rated by >=5 users. This is not
+    //       implemented for now due to testing needs.
+    public async listIdleUsers(): Promise<(User & nano.Document)[]> {
+        let res = await this.db.find({
+            selector: {
+                state: State.Idle
+            }
+        });
+
+        if (res.docs == null) {
+            return [];
+        } else {
+            return res.docs.map((item) => util.assertDocument(item));
         }
     }
 
