@@ -56,7 +56,8 @@ export enum State {
     MatchingPreferencesSet,
     // Waiting to be matched
     Idle,
-    // TODO: Verified, Idle, Matched, Dated, etc...
+    // TODO: Verified, Idle, Dated, etc...
+    Matched,
 }
 
 export interface UserTraits {
