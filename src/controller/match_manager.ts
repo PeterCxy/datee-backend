@@ -1,19 +1,18 @@
 import { default as Server} from "../server";
 import Match from "../model/match";
 import nano = require("nano");
-import { State } from "../model/user";
 import { Gender } from "../model/user";
 import User from "../model/user";
+import user_manager from "./user_manager";
 
 class MatchManager {
     private db_matches: nano.DocumentScope<Match>;
-    private db_users: nano.DocumentScope<User>;
 
     constructor() {
         // anything needed?
     }
 
-    private async initializeDbs() {
+    private async initializeDb() {
         this.db_matches = await Server.getDatabase("matches");
         await this.db_matches.createIndex({
             index: {
@@ -23,19 +22,10 @@ class MatchManager {
             ddoc: "indexMatch",
             name: "indexMatch"
         });
-
-        this.db_users = await Server.getDatabase("users");
-        await this.db_users.createIndex({
-            index: {
-                fields: ["uid", "email", "state"],
-            },
-            ddoc: "indexUsers",
-            name: "indexUsers"
-        });
     }
 
     public async doMatches() {
-        this.initializeDbs();
+        this.initializeDb();
 
         // TODO: process one list at a time
 
@@ -61,25 +51,19 @@ class MatchManager {
     }
 
     private async getUsers(gender: Gender, genderPref: Gender) {
-        let users = await this.db_users.find({
-            selector: {
-                gender: gender,
-                state: State.Idle
-            }
+        let users = await user_manager.listIdleUsers();
+
+        let pickedUsers: User[];
+
+        users.forEach(user => {
+            // pick a user only if it has the right gender and gender preference
+            if (user.gender == gender &&
+                user.matchingPref.gender == genderPref)
+                pickedUsers.push(user);
         });
 
-        if (users.docs == null || users.docs.length == 0) {
-            return null;
-        } else {
-            let pickedUsers: User[];
-
-            users.docs.forEach(user => {
-                if (user.matchingPref.gender == genderPref)
-                    pickedUsers.push(user);
-            });
-
-            return pickedUsers;
-        }
+        return pickedUsers;
+        
     }
 
     private async calculateDistances(users1: User[], users2: User[], edges: Edge[]) {
