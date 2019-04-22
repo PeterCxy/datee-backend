@@ -1,9 +1,7 @@
-import { default as Server, Component, ComponentRouter } from "../server";
+import { default as Server} from "../server";
 import Match from "../model/match";
 import nano = require("nano");
-import * as util from "../misc/util";
 import { State } from "../model/user";
-import { MatchingPreference } from "../model/user";
 import { Gender } from "../model/user";
 import User from "../model/user";
 
@@ -26,30 +24,40 @@ class MatchManager {
             name: "indexMatch"
         });
 
-        this.db_users = await Server.getDatabase("matches");
+        this.db_users = await Server.getDatabase("users");
         await this.db_users.createIndex({
             index: {
                 fields: ["uid", "email", "state"],
             },
-            ddoc: "indexMatch",
-            name: "indexMatch"
+            ddoc: "indexUsers",
+            name: "indexUsers"
         });
     }
 
     public async doMatches() {
         this.initializeDbs();
 
+        // TODO: process one list at a time
+
         // 1. Retrieve all currently unmatched users
         //      AND
         // 2. Separate them into 4 groups
-        let listMM = this.getUsers(Gender.Male, Gender.Male);
-        let listFF = this.getUsers(Gender.Female, Gender.Female);
-        let listMF = this.getUsers(Gender.Male, Gender.Female);
-        let listFM = this.getUsers(Gender.Female, Gender.Male);
+        let listMM = await this.getUsers(Gender.Male, Gender.Male);
+        let listFF = await this.getUsers(Gender.Female, Gender.Female);
+        let listMF = await this.getUsers(Gender.Male, Gender.Female);
+        let listFM = await this.getUsers(Gender.Female, Gender.Male);
 
-        // calculate distances
+        // 3. Calculate distances
+        // 4. TODO: same for female
+        let edgesMM: Edge[];
+        await this.calculateDistances(listMM, listMM, edgesMM);
 
-        // TODO: process one list at a time
+        // 6. For each list, do:
+        //      a. pop first edge: new match!
+        //      b. add match to the database
+        //      c. update the users' status to 'matched'
+        //      d. delete all other edges containing either user
+        await this.processMatches(edgesMM);
     }
 
     private async getUsers(gender: Gender, genderPref: Gender) {
@@ -72,6 +80,90 @@ class MatchManager {
 
             return pickedUsers;
         }
+    }
+
+    private async calculateDistances(users1: User[], users2: User[], edges: Edge[]) {
+        // compare each user from the first group
+        users1.forEach(user => {
+
+            // to all users in the second group
+            users2.forEach(other => {
+
+                if (this.areMatchable(user, other)) {
+                    let edge: Edge = {
+                        user1: user.uid,
+                        user2: other.uid,
+                        weight: this.distance(user, other)
+                    }
+                    edges.push(edge);
+                }
+            });
+        })
+        // 5. Order the list according to weight number
+        edges.sort(function(a: Edge, b: Edge) {
+            return (a.weight - b.weight);
+        });
+    }
+
+    private areMatchable(user1: User, user2: User): boolean {
+        if (user1.uid == user2.uid)
+            return false;
+        
+        // if user2 is the right age for user1
+        if (user1.matchingPref.minAge <= user2.age &&
+            user1.matchingPref.maxAge >= user2.age)
+            // and user1 is the right age for user2
+            if (user2.matchingPref.minAge <= user1.age &&
+                user2.matchingPref.maxAge >= user1.age)
+
+                return true;
+        // incompatible ages
+        return false;
+    }
+
+    private distance(user1: User, user2: User): number {
+        return Math.sqrt(
+            // how good user1 is for user2
+            Math.pow(user1.selfAssessment.openness - user2.matchingPref.openness, 2) +
+            Math.pow(user1.selfAssessment.romance - user2.matchingPref.romance, 2) +
+            Math.pow(user1.selfAssessment.warmheartedness - user2.matchingPref.warmheartedness, 2) +
+            // how good user2 is for user1
+            Math.pow(user1.matchingPref.openness - user2.selfAssessment.openness, 2) +
+            Math.pow(user1.matchingPref.romance - user2.selfAssessment.romance, 2) +
+            Math.pow(user1.matchingPref.warmheartedness - user2.selfAssessment.warmheartedness, 2)
+        );
+    }
+
+    private async processMatches(edges: Edge[]) {
+        while (edges.length > 0) {
+            // a. pop first edge: new match!
+            let bestBet = edges.pop();
+
+            // b. add match to the database
+            let match: Match = {
+                userID1: bestBet.user1,
+                userID2: bestBet.user2,
+                date: new Date().getTime(),
+                active: true
+            };
+            let res = await this.db_matches.insert(match);
+
+            // TODO: c. update user's status
+
+            // d. delete all other edges containing either user
+            let i = 0;
+            while (i < edges.length) {
+                if (this.edgeContainsUsers(edges[i], bestBet.user1, bestBet.user2))
+                    edges.splice(i, 1)
+                else
+                    i++;
+            }
+        }
+    }
+
+    private edgeContainsUsers(edge: Edge, user1: string, user2: string) {
+        return (edge.user1 == user1 || edge.user1 == user2 ||
+                edge.user2 == user1 || edge.user2 == user2)
     }
     
 
@@ -105,4 +197,10 @@ class MatchManager {
         c. update the users' status to 'matched'
         d. delete all other edges containing either user
 */
+}
+
+interface Edge {
+    user1: string;
+    user2: string;
+    weight: number;
 }
