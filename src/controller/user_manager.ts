@@ -174,19 +174,10 @@ class UserManager implements Component {
     }
 
     public async updateUserStatus(uid: string, state: State) {
-        let res = await this.db.find({
-            selector: {
-                uid: uid
-            }
-        });
-
-        if (res.docs == null || res.docs.length == 0) {
-            return;
-        } else {
-            let updatedUser: User = res.docs[0];
-            updatedUser.state = state;
-            await this.updateUser(updatedUser);
-        }
+        // retrieve the user, change its status and update it in the DB
+        let user = await this.findUserById(uid);
+        user.state = state;
+        this.updateUser(user);
     }
 
     private sanitizeUser(user: User): User {
