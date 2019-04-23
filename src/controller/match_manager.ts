@@ -61,25 +61,32 @@ class MatchManager {
         // retrieve users that need to be matched
         maleUsers = await user_manager.listIdleUsersWithGenders(
             Gender.Male, Gender.Male);
+
         // generate the graph (stores as edges)
         await this.generateGraph(maleUsers, maleUsers, edges);
         // process the graph and update the database
         await this.processMatches(edges);
+
         // these are no more needed
         maleUsers = []; edges = [];
+
 
         ////////////////////////// GAY FEMALE //////////////////
         femaleUsers = await user_manager.listIdleUsersWithGenders(
             Gender.Female, Gender.Female);
+
         await this.generateGraph(femaleUsers, femaleUsers, edges);
         await this.processMatches(edges);
+
         femaleUsers = []; edges = [];
+
 
         ////////////////////////// STRAIGHT //////////////////
         femaleUsers = await user_manager.listIdleUsersWithGenders(
             Gender.Female, Gender.Male);
         maleUsers   = await user_manager.listIdleUsersWithGenders(
             Gender.Male, Gender.Female);
+
         await this.generateGraph(maleUsers, femaleUsers, edges);
         await this.processMatches(edges);
     }
@@ -124,6 +131,10 @@ class MatchManager {
     }
 
     private distance(user1: User, user2: User): number {
+        // TODO: make this function work with any number of values in the 
+        // self assessment, so that it is not necessary to modify this function
+        // every time the user model is updated
+
         return Math.sqrt(
             // how good user1 is for user2
             Math.pow(user1.selfAssessment.openness - user2.matchingPref.openness, 2) +
@@ -194,7 +205,7 @@ class MatchManager {
     }
 
 
-    /////////////// GET ///////////////////////
+    /////////////// GET //////////////////////////////////
 
     public async getUserMatch(uid: string): Promise<Match & nano.Document | undefined> {
         let res = await this.db.find({
@@ -234,40 +245,6 @@ class MatchManager {
         user_manager.updateUserStatus(match.userID1, State.Idle);
         user_manager.updateUserStatus(match.userID2, State.Idle);
     }
-
-
-    
-
-/*  To do the match do the following:
-
-    0. Unmatch all expired matches [To do later]
-    1. Retrieve all currently unmatched users
-    2. Divide them into 4 groups (MF, FM, MM, FF)
-    3. Create 3 empty lists: listMM, listFF, listMF
-
-    3.Note: edge are objects of type {
-        user1: string,
-        user2: string,
-        distance: int,
-    }
-
-    3. For each member m in each gay group, do:
-        a. For each other om member in the same group do:
-            . calculate edge(m, om) and add it to listMM/FF
-            . add m to the list of finished users
-
-    4. For each member m in the MF group do:
-        a. For each member f in the FM group do:
-            . calculate edge(m, f) and add it to listMF
-    
-    5. Order the lists according to the distances
-
-    6. For each list, do:
-        a. pop first edge: new match!
-        b. add match to the database
-        c. update the users' status to 'matched'
-        d. delete all other edges containing either user
-*/
 }
 
 interface Edge {
