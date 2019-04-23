@@ -17,8 +17,7 @@ class MatchManager {
         this.db = await Server.getDatabase("matches");
         await this.db.createIndex({
             index: {
-                // TODO: review this
-                fields: ["userID1", "userID2", "date", "active"],
+                fields: ["userID1", "userID2"],
             },
             ddoc: "indexMatch",
             name: "indexMatch"
@@ -158,7 +157,7 @@ class MatchManager {
             let expiredMatches: Match[] =[];
             let now = new Date().getTime();
 
-            res.docs.array.forEach((match: Match) => {
+            res.docs.forEach((match: Match) => {
                 if (now - match.date > timeAllowed)
                     expiredMatches.push(util.assertDocument(match));
             });
