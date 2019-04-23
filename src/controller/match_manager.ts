@@ -195,13 +195,15 @@ class MatchManager {
                 active: match.active
             }
         });
-
-        // delete the old match
-        await this.db.destroy(toDelete._id, toDelete._rev);
-
-        // and add a new one
+        
+        // make the match inactive
         match.active = false;
-        await this.db.insert(match);
+
+        // and update it in the database
+        let res = await this.db.insert(match);
+        if (!res.ok) {
+            throw "Failed to unmatch match in database";
+        }
 
         // also update the state of the users
         user_manager.updateUserStatus(match.userID1, State.Idle);
