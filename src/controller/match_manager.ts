@@ -4,17 +4,18 @@ import nano = require("nano");
 import { Gender } from "../model/user";
 import User from "../model/user";
 import user_manager from "./user_manager";
+import * as util from "../misc/util";
 
 class MatchManager {
-    private db_matches: nano.DocumentScope<Match>;
+    private db: nano.DocumentScope<Match>;
 
     constructor() {
         // anything needed?
     }
 
     private async initializeDb() {
-        this.db_matches = await Server.getDatabase("matches");
-        await this.db_matches.createIndex({
+        this.db = await Server.getDatabase("matches");
+        await this.db.createIndex({
             index: {
                 // TODO: review this
                 fields: ["userID1", "userID2", "date", "active"],
@@ -63,7 +64,6 @@ class MatchManager {
         });
 
         return pickedUsers;
-        
     }
 
     private async calculateDistances(users1: User[], users2: User[], edges: Edge[]) {
@@ -130,7 +130,7 @@ class MatchManager {
                 date: new Date().getTime(),
                 active: true
             };
-            let res = await this.db_matches.insert(match);
+            let res = await this.db.insert(match);
 
             // TODO: c. update user's status
 
@@ -149,6 +149,24 @@ class MatchManager {
         return (edge.user1 == user1 || edge.user1 == user2 ||
                 edge.user2 == user1 || edge.user2 == user2)
     }
+
+
+    /////////////// GETTERS ///////////////////////
+
+    public async getUserMatch(uid: string): Promise<Match & nano.Document> {
+        let res = await this.db.find({
+            selector: {
+                "$or": [{userID1: uid}, {userID2: uid}],
+                active: true,
+            }
+        });
+        if (res.docs == null)
+            return null;
+        else
+            return util.assertDocument(res.docs[0]);
+    }
+
+
     
 
 /*  To do the match do the following:
