@@ -173,19 +173,21 @@ class UserManager implements Component {
         }
     }
 
-    public async listIdleUsersWithGenders(gender: Gender, genderPref: Gender): Promise<User[]> {
-        let users = await this.listIdleUsers();
-
-        let pickedUsers: User[];
-
-        users.forEach(user => {
-            // pick a user only if it has the right gender and gender preference
-            if (user.gender == gender &&
-                user.matchingPref.gender == genderPref)
-                pickedUsers.push(user);
+    public async listIdleUsersWithGenders(gender: Gender, genderPref: Gender): Promise<(User & nano.Document)[]> {
+        let res = await this.db.find({
+            selector: {
+                state: State.Idle,
+                gender: gender,
+                genderPref: {
+                    gender: genderPref
+                }
+            }
         });
-
-        return pickedUsers;
+        if (res.docs == null) {
+            return [];
+        } else {
+            return res.docs.map((item) => util.assertDocument(item));
+        }
     }
 
     public async updateUserStatus(uid: string, state: State) {
