@@ -1,7 +1,7 @@
 import { default as Server} from "../server";
 import Match from "../model/match";
 import nano = require("nano");
-import { Gender } from "../model/user";
+import { Gender, State } from "../model/user";
 import User from "../model/user";
 import user_manager from "./user_manager";
 import * as util from "../misc/util";
@@ -28,15 +28,8 @@ class MatchManager {
     public async doMatches() {
         this.initializeDb();
 
-        // TODO: process one list at a time
-
-        // 1. Retrieve all currently unmatched users
-        //      AND
-        // 2. Separate them into 4 groups
+        // GAY MALE
         let listMM = await this.getUsers(Gender.Male, Gender.Male);
-        let listFF = await this.getUsers(Gender.Female, Gender.Female);
-        let listMF = await this.getUsers(Gender.Male, Gender.Female);
-        let listFM = await this.getUsers(Gender.Female, Gender.Male);
 
         // 3. Calculate distances
         // 4. TODO: same for female
@@ -132,13 +125,15 @@ class MatchManager {
             };
             let res = await this.db.insert(match);
 
-            // TODO: c. update user's status
+            // c. update users' status
+            user_manager.updateUserStatus(bestBet.user1, State.Matched);
+            user_manager.updateUserStatus(bestBet.user2, State.Matched);
 
             // d. delete all other edges containing either user
             let i = 0;
             while (i < edges.length) {
                 if (this.edgeContainsUsers(edges[i], bestBet.user1, bestBet.user2))
-                    edges.splice(i, 1)
+                    edges.splice(i, 1)  // delete 1 edge at index i
                 else
                     i++;
             }
@@ -150,10 +145,33 @@ class MatchManager {
                 edge.user2 == user1 || edge.user2 == user2)
     }
 
+    private async unmatchExpiredMatches(timeAllowed: number) {
+        let res = await this.db.find({
+            selector: {
+                active: true,
+            }
+        });
+        if (res.docs == null)
+            return;
+        else {
+            // create a list of matches to destroy
+            let expiredMatches: Match[] =[];
+            let now = new Date().getTime();
 
-    /////////////// GETTERS ///////////////////////
+            res.docs.array.forEach((match: Match) => {
+                if (now - match.date > timeAllowed)
+                    expiredMatches.push(util.assertDocument(match));
+            });
 
-    public async getUserMatch(uid: string): Promise<Match & nano.Document> {
+            // unmatch those matches
+            expiredMatches.forEach(match => this.unMatch(match));
+        }
+    }
+
+
+    /////////////// GET ///////////////////////
+
+    public async getUserMatch(uid: string): Promise<Match & nano.Document | undefined> {
         let res = await this.db.find({
             selector: {
                 "$or": [{userID1: uid}, {userID2: uid}],
@@ -164,6 +182,30 @@ class MatchManager {
             return null;
         else
             return util.assertDocument(res.docs[0]);
+    }
+
+    /////////////// REMOVE / UPDATE ///////////////////////
+
+    public async unMatch(match: Match) {
+        let toDelete = await this.db.find({
+            selector: {
+                userID1: match.userID1,
+                userID2: match.userID2,
+                date: match.date,
+                active: match.active
+            }
+        });
+
+        // delete the old match
+        await this.db.destroy(toDelete._id, toDelete._rev);
+
+        // and add a new one
+        match.active = false;
+        await this.db.insert(match);
+
+        // also update the state of the users
+        user_manager.updateUserStatus(match.userID1, State.Idle);
+        user_manager.updateUserStatus(match.userID2, State.Idle);
     }
 
 

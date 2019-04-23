@@ -173,6 +173,22 @@ class UserManager implements Component {
         }
     }
 
+    public async updateUserStatus(uid: string, state: State) {
+        let res = await this.db.find({
+            selector: {
+                uid: uid
+            }
+        });
+
+        if (res.docs == null || res.docs.length == 0) {
+            return;
+        } else {
+            let updatedUser: User = res.docs[0];
+            updatedUser.state = state;
+            await this.updateUser(updatedUser);
+        }
+    }
+
     private sanitizeUser(user: User): User {
         delete user.passwordHash;
         delete user.matchingPref;
