@@ -2,7 +2,7 @@ import { default as Server, Component, ComponentRouter } from "../server";
 import { Response, ExceptionToResponse } from "./shared";
 import AuthManager from "./auth_manager";
 import { default as User, UserInfo, State, UserTraits,
-    SelfAssessment, MatchingPreference } from "../model/user";
+    SelfAssessment, MatchingPreference, Gender } from "../model/user";
 import * as locality from "../model/locality";
 import * as util from "../misc/util";
 import express from "express";
@@ -171,6 +171,21 @@ class UserManager implements Component {
         } else {
             return res.docs.map((item) => util.assertDocument(item));
         }
+    }
+
+    public async listIdleUsersWithGenders(gender: Gender, genderPref: Gender): Promise<User[]> {
+        let users = await this.listIdleUsers();
+
+        let pickedUsers: User[];
+
+        users.forEach(user => {
+            // pick a user only if it has the right gender and gender preference
+            if (user.gender == gender &&
+                user.matchingPref.gender == genderPref)
+                pickedUsers.push(user);
+        });
+
+        return pickedUsers;
     }
 
     public async updateUserStatus(uid: string, state: State) {
