@@ -210,7 +210,10 @@ class MatchManager {
     public async getUserMatch(uid: string): Promise<Match & nano.Document | undefined> {
         let res = await this.db.find({
             selector: {
-                "$or": [{userID1: uid}, {userID2: uid}],
+                or: {   // pick matches whose first or second user matches
+                    userID1: uid, 
+                    userID2: uid
+                },
                 active: true,
             }
         });
