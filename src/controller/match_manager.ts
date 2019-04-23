@@ -24,41 +24,67 @@ class MatchManager {
         });
     }
 
+    /**
+     * Perform routine matching. This method will automatically break current
+     * matches that have expired and match as many people as possible.
+     * It works as follows:
+     * 0. Unmatch all expired matches [To do later]
+     * 1. Retrieve all currently unmatched users
+     * 2. Divide them into 4 groups (MF, FM, MM, FF)
+     * 3. Create 3 empty lists: listMM, listFF, listMF     * 
+     * 4. For each member m in each gay group, do:
+     *     a. For each other om member in the same group do:
+     *         . calculate edge(m, om) and add it to listMM/FF
+     *         . add m to the list of finished users
+     * 
+     * 5. For each member m in the MF group do:
+     *     a. For each member f in the FM group do:
+     *         . calculate edge(m, f) and add it to listMF
+     * 
+     * 6. Order the lists according to the distances
+     * 
+     * 7. For each list, do:
+     *     a. pop first edge: new match!
+     *     b. add match to the database
+     *     c. update the users' status to 'matched'
+     *     d. delete all other edges containing either user
+     */
     public async doMatches() {
-        this.initializeDb();
+        await this.unmatchExpiredMatches(60*60*36);   // after 36 hours it is expired
+        await this.initializeDb();
 
-        // GAY MALE
-        let listMM = await this.getUsers(Gender.Male, Gender.Male);
+        let edges: Edge[];
+        let maleUsers: User[];
+        let femaleUsers: User[];
 
-        // 3. Calculate distances
-        // 4. TODO: same for female
-        let edgesMM: Edge[];
-        await this.calculateDistances(listMM, listMM, edgesMM);
+        ////////////////////////// GAY MALE ////////////////////
+        // retrieve users that need to be matched
+        maleUsers = await user_manager.listIdleUsersWithGenders(
+            Gender.Male, Gender.Male);
+        // generate the graph (stores as edges)
+        await this.generateGraph(maleUsers, maleUsers, edges);
+        // process the graph and update the database
+        await this.processMatches(edges);
+        // these are no more needed
+        maleUsers = []; edges = [];
 
-        // 6. For each list, do:
-        //      a. pop first edge: new match!
-        //      b. add match to the database
-        //      c. update the users' status to 'matched'
-        //      d. delete all other edges containing either user
-        await this.processMatches(edgesMM);
+        ////////////////////////// GAY FEMALE //////////////////
+        femaleUsers = await user_manager.listIdleUsersWithGenders(
+            Gender.Female, Gender.Female);
+        await this.generateGraph(femaleUsers, femaleUsers, edges);
+        await this.processMatches(edges);
+        femaleUsers = []; edges = [];
+
+        ////////////////////////// STRAIGHT //////////////////
+        femaleUsers = await user_manager.listIdleUsersWithGenders(
+            Gender.Female, Gender.Male);
+        maleUsers   = await user_manager.listIdleUsersWithGenders(
+            Gender.Male, Gender.Female);
+        await this.generateGraph(maleUsers, femaleUsers, edges);
+        await this.processMatches(edges);
     }
 
-    private async getUsers(gender: Gender, genderPref: Gender) {
-        let users = await user_manager.listIdleUsers();
-
-        let pickedUsers: User[];
-
-        users.forEach(user => {
-            // pick a user only if it has the right gender and gender preference
-            if (user.gender == gender &&
-                user.matchingPref.gender == genderPref)
-                pickedUsers.push(user);
-        });
-
-        return pickedUsers;
-    }
-
-    private async calculateDistances(users1: User[], users2: User[], edges: Edge[]) {
+    private async generateGraph(users1: User[], users2: User[], edges: Edge[]) {
         // compare each user from the first group
         users1.forEach(user => {
 
