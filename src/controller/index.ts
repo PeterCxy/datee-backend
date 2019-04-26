@@ -4,3 +4,4 @@ import "./auth_manager";
 import "./photo_manager";
 import "./admin";
 import "./rating_manager";
+import "./feedback_manager"

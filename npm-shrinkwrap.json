@@ -597,7 +597,7 @@
       "requires": {
         "bluebird": "^3.0.5",
         "express": "^4.13.3",
-        "oauth2-server": "3.0.1"
+        "oauth2-server": "3.0.0"
       },
       "dependencies": {
         "statuses": {
