@@ -62,7 +62,6 @@ class DateeServer {
         let routers = await Promise.all(
             this.components.map((c) => c.setupRoutes()));
         routers.forEach((r) => {
-            console.log(r.mountpoint);
             this.app.use(r.mountpoint, r.router);
         });
     }
