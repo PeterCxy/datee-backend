@@ -1,10 +1,7 @@
 import { default as Server, Component, ComponentRouter } from "../server";
 import { Response, ExceptionToResponse } from "./shared";
-import AuthManager from "./auth_manager";
 import { default as Feedback, FeedbackInfo }from "../model/feedback"
-import user_manager from "./user_manager";
-import { default as User, UserInfo, State, UserTraits,
-    SelfAssessment, MatchingPreference, Gender } from "../model/user";
+import UserManager from "./user_manager";
 import nano from "nano";
 import express from "express";
 import * as util from "../misc/util";
@@ -33,19 +30,13 @@ class FeedbackManager implements Component {
         await this.initializeDb();
         // Build the router
         let router = express.Router();
-        // Registration doesn't need to be authenticated
-        AuthManager.excludePath("/feedback/newFeedback");
-        AuthManager.excludePath("/feedback/get");
-        router.post("/newFeedback", this.CreateNewFeedback.bind(this));
-        router.get("/get",this.GetFeedbacks.bind(this));
+        router.put("/new", this.createNewFeedback.bind(this));
+        router.get("/self",this.getFeedbacks.bind(this));
         return {
             mountpoint: "/feedback",
             router: router
         };
     }
-
-    //find a feedback by feedbackid
-    
     
     public async findFeedbackById(feedbackId: string): Promise<Feedback & nano.Document | undefined> {
         let res = await this.db.find({
@@ -60,7 +51,7 @@ class FeedbackManager implements Component {
         }
     }
 
-    public async findFeedbackByUser(from: string,to: string): Promise<Feedback & nano.Document | undefined> {
+    public async findFeedbackByUserPair(from: string, to: string): Promise<Feedback & nano.Document | undefined> {
         let res = await this.db.find({
             selector: {
                 from: from,
@@ -74,11 +65,15 @@ class FeedbackManager implements Component {
         }
     }  
 
-    public async CreateFeedback(info:FeedbackInfo):Promise<void> {
-        if ((await this.findFeedbackByUser(info.from, info.to)) != null) {
+    public async createFeedback(info: FeedbackInfo): Promise<void> {
+        if ((await this.findFeedbackByUserPair(info.from, info.to)) != null) {
             throw "Feedback already exists";
         }
-        if(info.content==null){
+        if ((await UserManager.findUserById(info.from)) == null
+            || (await UserManager.findUserById(info.to)) == null) {
+            throw "Both from and to must exist";
+        }
+        if (info.content == null){
             throw "Your content is null";
         }
         let id;
@@ -99,7 +94,7 @@ class FeedbackManager implements Component {
     }
 
     //find a feedback by from user's email
-    public async findFeedbacksByFrom(from: string): Promise<Feedback & nano.Document | undefined> {
+    public async findFeedbacksByFrom(from: string): Promise<(Feedback & nano.Document)[]> {
         let res = await this.db.find({
             selector: {
                 from: from,
@@ -108,29 +103,30 @@ class FeedbackManager implements Component {
         if (res.docs == null || res.docs.length == 0) {
             return null;
         } else {
-            return util.assertDocument(res.docs[0]);
+            return res.docs.map((it) => util.assertDocument(it));
         }
     }
 
 
     @ExceptionToResponse
-    private async CreateNewFeedback (
-        req: express.Request,
+    private async createNewFeedback (
+        req: express.Request, res: express.Response
     ): Promise<Response<void>> {
-        // Errors will be thrown directly from checkProperties()
-        // here we use if just to trick TypeScript to make the
-        // type assertion work.
-        await this.CreateFeedback(req.body);
+        let me = await UserManager.getCurrentUser(res);
+        if (me.uid != req.body.from) {
+            throw "You can only submit feedback as yourself";
+        }
+        await this.createFeedback(req.body);
         return { ok: true };
     }
 
     @ExceptionToResponse
-    private async GetFeedbacks(
-        req: express.Request,
-    ): Promise<Response<Feedback>> {
-        const response = await this.findFeedbacksByFrom(req.body.from);
-        console.log(response);
-        return { ok: true, result: response};
+    private async getFeedbacks(
+        req: express.Request, res: express.Response
+    ): Promise<Response<Feedback[]>> {
+        let from = await UserManager.getCurrentUser(res);
+        const response = await this.findFeedbacksByFrom(from.uid);
+        return { ok: true, result: response.map((it) => util.sanitizeDocument(it))};
     }
 
     
