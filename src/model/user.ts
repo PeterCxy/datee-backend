@@ -9,6 +9,11 @@ export interface UserInfo {
     firstName: string
     lastName: string
     // Age of the user
+    // NOTE: When stored in database,
+    // this age is OFFSET TO YEAR 2000,
+    // i.e. the age of the user in year 2000
+    // When retrieved from database, the retriever
+    // function should take care of this conversion.
     age: number
     // Biological gender of the user
     gender: Gender

@@ -55,7 +55,7 @@ class UserManager implements Component {
         if (res.docs == null || res.docs.length == 0) {
             return null;
         } else {
-            return util.assertDocument(res.docs[0]);
+            return this.preprocessUserFromQuery(util.assertDocument(res.docs[0]));
         }
     }
 
@@ -87,7 +87,7 @@ class UserManager implements Component {
         if (res.docs == null || res.docs.length == 0) {
             return null;
         } else {
-            return util.assertDocument(res.docs[0]);
+            return this.preprocessUserFromQuery(util.assertDocument(res.docs[0]));
         }
     }
 
@@ -108,6 +108,8 @@ class UserManager implements Component {
         if ((await this.findUserById(user.uid)) == null) {
             throw "User " + user.uid + " not found in database.";
         }
+        // The Age offset always needs to be processed before insertion
+        user.age = this.realAgeToDatabase(user.age);
         // If the original object is a `Document` (contains "_rev")
         // then this will be an update operation
         let res = await this.db.insert(user);
@@ -142,7 +144,7 @@ class UserManager implements Component {
             email: info.email,
             firstName: info.firstName,
             lastName: info.lastName,
-            age: info.age,
+            age: this.realAgeToDatabase(info.age),
             gender: info.gender,
             country: info.country,
             city: info.city,
@@ -152,6 +154,23 @@ class UserManager implements Component {
         if (!res.ok) {
             throw "Database failure";
         }
+    }
+
+    // IMPORTANT!
+    // All ages in the database should be stored as an offset to the year 2000
+    // i.e. the `age` in database should be the age of the user in year 2000
+    // all the User objects retrieved from the database need to get such a offset!
+    public realAgeToDatabase(age: number): number {
+        return age - (new Date().getFullYear() - 2000);
+    }
+
+    public databaseAgeToReal(age: number): number {
+        return age + (new Date().getFullYear() - 2000);
+    }
+
+    public preprocessUserFromQuery(user: User & nano.Document): User & nano.Document {
+        user.age = this.databaseAgeToReal(user.age);
+        return user;
     }
 
     // Intended for use in the matching algorithm
@@ -169,7 +188,8 @@ class UserManager implements Component {
         if (res.docs == null) {
             return [];
         } else {
-            return res.docs.map((item) => util.assertDocument(item));
+            return res.docs.map((item) => util.assertDocument(item))
+                .map((item) => this.preprocessUserFromQuery(item));
         }
     }
 
@@ -186,7 +206,8 @@ class UserManager implements Component {
         if (res.docs == null) {
             return [];
         } else {
-            return res.docs.map((item) => util.assertDocument(item));
+            return res.docs.map((item) => util.assertDocument(item))
+                .map((item) => this.preprocessUserFromQuery(item));
         }
     }
 
