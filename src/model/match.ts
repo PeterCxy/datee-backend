@@ -6,10 +6,10 @@ export default interface Match {
     // to reduce calulations with times. Flag is true if the match happened less than 24h ago
     active: boolean,    
     // list of potential dates proposed by the two
-    dates: Date[]
+    dates: Array<Proposal>
 }
 
-export interface Date {
+export interface Proposal {
     // 1 or 2, the user who proposed it
     madeBy: number,
     // time of the meeting

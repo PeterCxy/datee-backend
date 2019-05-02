@@ -1,10 +1,12 @@
-import { default as Server} from "../server";
-import Match from "../model/match";
+import {default as Server, ComponentRouter} from "../server";
+import {default as Match, Proposal} from "../model/match";
 import nano = require("nano");
 import { Gender, State } from "../model/user";
 import User from "../model/user";
 import user_manager from "./user_manager";
 import * as util from "../misc/util";
+import express = require("express");
+import { Response, ExceptionToResponse } from "./shared";
 
 class MatchManager {
     private db: nano.DocumentScope<Match>;
@@ -17,11 +19,91 @@ class MatchManager {
         this.db = await Server.getDatabase("matches");
         await this.db.createIndex({
             index: {
-                fields: ["userID1", "userID2"],
+                fields: ["userID1", "userID2", "active"],
             },
             ddoc: "indexMatch",
             name: "indexMatch"
         });
+    }
+
+    public async setupRoutes(): Promise<ComponentRouter> {
+        await this.initializeDb();
+        //let multerMiddleware = multer({ storage: multer.memoryStorage() });
+        let router = express.Router();
+        router.get("/list/:uid", this.getUserMatch.bind(this));
+        router.get("/proposals/:uid", this.getProposals.bind(this));   // must provide user id to retrieve the match's proposals
+        router.put("/proposals/:uid", this.putProposal.bind(this));
+        router.put("/accept/:uid", this.acceptProposal.bind(this));
+        return {
+            mountpoint: "/match",
+            router: router
+        };
+    }
+
+    private async getProposalsOfMatch(uid: string): Promise<Array<Proposal> | undefined > {
+        // quit if any parameter is invalid
+        if (user_manager.findUserById(uid) == null) {
+            throw "Unknown user";
+        }
+
+        let match = await this.getUserMatch(uid);
+        return match.dates;
+    }
+
+    private async addProposal(uid: string, date: number, location: string): Promise<void> {
+        // quit if any parameter is invalid
+        if (user_manager.findUserById(uid) == null) {
+            throw "Unknown user";
+        }
+        if (date < new Date().getTime()) {
+            throw "Cannot date someone in the past";
+        }
+        if (date > new Date().getTime() + 1000*60*60*24*14) {
+            throw "Cannot set a date more than 2 weeks from now";
+        }
+        if (location == null) {
+            throw "Must pick a location"
+        }
+
+        // get the match from database to update
+        let match = await this.getUserMatch(uid);
+        let p: Proposal;
+            p.agreed = false;
+            p.madeBy = (match.userID1 == uid) ? 1 : 2;
+            p.date = date;
+            p.location = location;
+        match.dates.push(p);
+
+        // finally update the match object
+        let res = await this.db.insert(match);
+        if (!res.ok) {
+            throw "Unknown database error";
+        }
+    }
+
+    private async acceptProposalNumber(uid: string, n: number): Promise<boolean> {
+        // quit if any parameter is invalid
+        if (user_manager.findUserById(uid) == null) {
+            throw "Unknown user";
+        }
+        // get the match from database to update
+        let match = await this.getUserMatch(uid);
+
+        // return false if there already is an agreed date
+        match.dates.forEach((proposal) => {
+            if (proposal.agreed == true) {
+                return false;
+            }
+        })
+
+        // finally update the match object
+        match.dates[n].agreed = true;
+        let res = await this.db.insert(match);
+
+        if (!res.ok) {
+            throw "Unknown database error";
+        } else
+            return true;
     }
 
     /**
@@ -157,7 +239,8 @@ class MatchManager {
                 userID1: bestBet.user1,
                 userID2: bestBet.user2,
                 date: new Date().getTime(),
-                active: true
+                active: true,
+                dates: Array<Proposal>()
             };
             let res = await this.db.insert(match);
 
@@ -230,7 +313,6 @@ class MatchManager {
             selector: {
                 userID1: match.userID1,
                 userID2: match.userID2,
-                date: match.date,
                 active: match.active
             }
         });
@@ -247,6 +329,42 @@ class MatchManager {
         // also update the state of the users
         user_manager.updateUserStatus(match.userID1, State.Idle);
         user_manager.updateUserStatus(match.userID2, State.Idle);
+    }
+
+    @ExceptionToResponse
+    private async putProposal(
+        req: express.Request, 
+        res: express.Response
+    ): Promise<Response<void>> {
+        await this.addProposal(
+            req.params["uid"],
+            Number.parseInt(req.body["date"]),
+            req.body["location"]
+        );
+        return { ok: true };
+    }
+
+    @ExceptionToResponse
+    private async getProposals(
+        req: express.Request, 
+        res: express.Response
+    ): Promise<Response<Array<Proposal>>> {
+        await this.getProposalsOfMatch(
+            req.params["uid"]
+        );
+        return { ok: true };
+    }
+
+    @ExceptionToResponse
+    private async acceptProposal(
+        req: express.Request, 
+        res: express.Response
+    ): Promise<Response<boolean>> {
+        await this.acceptProposalNumber(
+            req.params["uid"],
+            req.body["proposalNumber"]
+        );
+        return { ok: true };
     }
 }
 
