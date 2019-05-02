@@ -38,6 +38,7 @@ class UserManager implements Component {
         router.get("/whoami", this.whoami.bind(this));
         router.put("/self_assessment", this.setSelfAssessment.bind(this));
         router.put("/matching_pref", this.setMatchingPreferences.bind(this));
+        router.get("/random", this.getRandomUidWithPhoto.bind(this));
         return {
             mountpoint: "/user",
             router: router
@@ -173,6 +174,25 @@ class UserManager implements Component {
         return user;
     }
 
+    // Intended for use when asking users to rate other users
+    public async randomUserWithPhoto(): Promise<(User & nano.Document) | undefined> {
+        let res = await this.db.find({
+            selector: {
+                state: {
+                    // Anything after Registered is at least PhotoUploaded
+                    $gt: State.Registered
+                }
+            }
+        });
+
+        if (res.docs == null || res.docs.length == 0) {
+            return null;
+        } else {
+            return this.preprocessUserFromQuery(
+                util.assertDocument(res.docs[Math.floor(Math.random() * res.docs.length)]));
+        }
+    }
+
     // Intended for use in the matching algorithm
     // TODO: Limit the return value of this function
     //       to ONLY those who have made >=5 ratings and
@@ -286,6 +306,14 @@ class UserManager implements Component {
         }
         await this.updateUser(user);
         return { ok: true };
+    }
+
+    @ExceptionToResponse
+    private async getRandomUidWithPhoto(
+        req: express.Request,
+        res: express.Response
+    ): Promise<Response<String>> {
+        return { ok: true, result: (await this.randomUserWithPhoto()).uid }
     }
 }
 
