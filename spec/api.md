@@ -97,6 +97,25 @@ Response:
 
 The meaning of all the fields in `result` are already described above in the `Register` API.
 
+
+### Random
+
+Endpoint: `/user/random`  
+Method: `GET`  
+Authentication: Required  
+Description:
+
+This method returns a random UID whose state is equal to or after `PhotoUploaded`, which can then be used to fetch photos for rating. This method is intended to be used in the rating process -- a random user's photos are presented for the current user to rate against.
+
+Response:
+
+```json
+{
+    "ok": true,
+    "result": "<some_random_uid>"
+}
+```
+
 ### Photo Upload
 
 Endpoint: `/photos/upload`  
