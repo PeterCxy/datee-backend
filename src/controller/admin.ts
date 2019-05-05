@@ -2,8 +2,11 @@ import { default as Server, Component, ComponentRouter } from "../server";
 import { Response, ExceptionToResponse } from "./shared";
 import AuthManager from "./auth_manager";
 import UserManager from "./user_manager";
-import { State } from "../model/user";
+import PhotoManager from "./photo_manager";
+import { UserInfo, State, Gender } from "../model/user";
+import { Countries, Cities } from "../model/locality";
 import express from "express";
+import request from "request-promise";
 
 /**
  * This class implements some functionalities only accessable
@@ -21,6 +24,7 @@ class Admin implements Component {
         // pipeline, we implement our own authentication middleware
         AuthManager.excludePath("/admin/activate");
         AuthManager.excludePath("/admin/do_match");
+        AuthManager.excludePath("/admin/generateRandomUser");
         router.use((req, res, next) => {
             if (req.ip != '127.0.0.1' && req.ip != '::ffff:127.0.0.1') {
                 res.sendStatus(401);
@@ -37,6 +41,7 @@ class Admin implements Component {
         // The actual routes
         router.post("/activate", this.activateUser.bind(this));
         router.get("/do_match", this.doMatch.bind(this));
+        router.post("/generateRandomUser", this.generateRandomUser.bind(this));
         return {
             mountpoint: "/admin",
             router: router
@@ -65,6 +70,50 @@ class Admin implements Component {
     @ExceptionToResponse
     private async doMatch(): Promise<Response<void>> {
         // fill in here
+        return { ok: true };
+    }
+
+    @ExceptionToResponse
+    private async generateRandomUser(): Promise<Response<void>> {
+        let rnd = Math.random().toString(36).substring(7);
+        let info: UserInfo = {
+            email: rnd + "@example.com",
+            firstName: rnd,
+            lastName: "Example",
+            age: 18 + Math.floor(Math.random() * 42),
+            gender: Math.random() >= 0.5 ? Gender.Male : Gender.Female,
+            country: Countries.China,
+            city: Cities.Suzhou
+        }
+        await UserManager.createUser(info, "1234567890");
+        let user = await UserManager.findUserByEmail(rnd + "@example.com");
+        for (let i = 0; i < 3 + Math.floor(Math.random() * 7); i++) {
+            let buf = await request("https://thispersondoesnotexist.com/image", { encoding: null });
+            if (!(buf instanceof Buffer)) {
+                throw "WTF? Not a buffer?";
+            }
+            await PhotoManager.addPhoto(user, buf, "image/jpeg");
+        }
+        user = await UserManager.findUserByEmail(rnd + "@example.com");
+        if (user.state != State.PhotoUploaded) {
+            throw "WTF? Photo not uploaded???";
+        }
+        user.selfAssessment = {
+            romance: 1 + Math.floor(Math.random() * 5),
+            openness: 1 + Math.floor(Math.random() * 5),
+            warmheartedness: 1 + Math.floor(Math.random() * 5)
+        };
+        let minAge = 18 + Math.floor(Math.random() * 42)
+        user.matchingPref = {
+            gender: Math.random() >= 0.5 ? Gender.Male : Gender.Female,
+            minAge: minAge,
+            maxAge: minAge + Math.floor(Math.random() * (60 - minAge)),
+            romance: 1 + Math.floor(Math.random() * 5),
+            openness: 1 + Math.floor(Math.random() * 5),
+            warmheartedness: 1 + Math.floor(Math.random() * 5)
+        }
+        user.state = State.Idle;
+        user = await UserManager.updateUser(user);
         return { ok: true };
     }
 }
