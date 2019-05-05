@@ -175,7 +175,7 @@ class UserManager implements Component {
     }
 
     // Intended for use when asking users to rate other users
-    public async randomUserWithPhoto(): Promise<(User & nano.Document) | undefined> {
+    public async randomUserWithPhoto(self_id: string): Promise<(User & nano.Document) | undefined> {
         let res = await this.db.find({
             selector: {
                 state: {
@@ -188,8 +188,12 @@ class UserManager implements Component {
         if (res.docs == null || res.docs.length == 0) {
             return null;
         } else {
+            let user = res.docs[Math.floor(Math.random() * res.docs.length)];
+            while (user.uid == self_id) {
+                user = res.docs[Math.floor(Math.random() * res.docs.length)];
+            }
             return this.preprocessUserFromQuery(
-                util.assertDocument(res.docs[Math.floor(Math.random() * res.docs.length)]));
+                util.assertDocument(user));
         }
     }
 
@@ -313,7 +317,8 @@ class UserManager implements Component {
         req: express.Request,
         res: express.Response
     ): Promise<Response<String>> {
-        return { ok: true, result: (await this.randomUserWithPhoto()).uid }
+        return { ok: true, result:
+            (await this.randomUserWithPhoto(await AuthManager.getCurrentUID(res))).uid }
     }
 }
 
