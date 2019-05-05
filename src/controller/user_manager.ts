@@ -222,7 +222,7 @@ class UserManager implements Component {
             selector: {
                 state: State.Idle,
                 gender: gender,
-                genderPref: {
+                matchingPref: {
                     gender: genderPref
                 }
             }
