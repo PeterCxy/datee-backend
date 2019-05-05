@@ -3,6 +3,7 @@ import { Response, ExceptionToResponse } from "./shared";
 import AuthManager from "./auth_manager";
 import UserManager from "./user_manager";
 import PhotoManager from "./photo_manager";
+import MatchManager from "./match_manager";
 import { UserInfo, State, Gender } from "../model/user";
 import { Countries, Cities } from "../model/locality";
 import express from "express";
@@ -65,11 +66,10 @@ class Admin implements Component {
         await UserManager.updateUser(user);
         return { ok: true };
     }
-
-    // TODO: Implement the matching algorithm here!!!
+    
     @ExceptionToResponse
     private async doMatch(): Promise<Response<void>> {
-        // fill in here
+        await MatchManager.doMatches();
         return { ok: true };
     }
 

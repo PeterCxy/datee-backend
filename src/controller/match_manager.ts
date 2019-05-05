@@ -374,3 +374,5 @@ interface Edge {
     user2: string;
     weight: number;
 }
+
+export default new MatchManager();
