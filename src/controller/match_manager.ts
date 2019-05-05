@@ -136,9 +136,9 @@ class MatchManager {
         //await this.unmatchExpiredMatches(60*60*36);   // after 36 hours it is expired
         await this.unmatchExpiredMatches(60); // FOR TESTING: 60 secs and matches expire
 
-        let edges: Edge[];
-        let maleUsers: User[];
-        let femaleUsers: User[];
+        let edges: Edge[] = [];
+        let maleUsers: User[] = [];
+        let femaleUsers: User[] = [];
 
         ////////////////////////// GAY MALE ////////////////////
         // retrieve users that need to be matched
