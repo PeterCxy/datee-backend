@@ -1,11 +1,11 @@
 import {default as Server, ComponentRouter} from "../server";
 import {default as Match, Proposal} from "../model/match";
-import nano = require("nano");
+import nano from "nano";
 import { Gender, State } from "../model/user";
 import User from "../model/user";
 import user_manager from "./user_manager";
 import * as util from "../misc/util";
-import express = require("express");
+import express from "express";
 import { Response, ExceptionToResponse } from "./shared";
 
 class MatchManager {
