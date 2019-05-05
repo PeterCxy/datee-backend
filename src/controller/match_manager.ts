@@ -246,8 +246,8 @@ class MatchManager {
             let res = await this.db.insert(match);
 
             // c. update users' status
-            user_manager.updateUserStatus(bestBet.user1, State.Matched);
-            user_manager.updateUserStatus(bestBet.user2, State.Matched);
+            await user_manager.updateUserStatus(bestBet.user1, State.Matched);
+            await user_manager.updateUserStatus(bestBet.user2, State.Matched);
 
             // d. delete all other edges containing either user
             let i = 0;
@@ -284,7 +284,9 @@ class MatchManager {
             });
 
             // unmatch those matches
-            expiredMatches.forEach(match => this.unMatch(match));
+            for (let match of expiredMatches) {
+                await this.unMatch(match);
+            }
         }
     }
 
@@ -328,8 +330,8 @@ class MatchManager {
         }
 
         // also update the state of the users
-        user_manager.updateUserStatus(match.userID1, State.Idle);
-        user_manager.updateUserStatus(match.userID2, State.Idle);
+        await user_manager.updateUserStatus(match.userID1, State.Idle);
+        await user_manager.updateUserStatus(match.userID2, State.Idle);
     }
 
     @ExceptionToResponse

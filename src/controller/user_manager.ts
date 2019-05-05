@@ -239,7 +239,7 @@ class UserManager implements Component {
         // retrieve the user, change its status and update it in the DB
         let user = await this.findUserById(uid);
         user.state = state;
-        this.updateUser(user);
+        await this.updateUser(user);
     }
 
     private sanitizeUser(user: User): User {
