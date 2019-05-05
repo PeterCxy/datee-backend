@@ -132,8 +132,9 @@ class MatchManager {
      *     d. delete all other edges containing either user
      */
     public async doMatches() {
-        await this.unmatchExpiredMatches(60*60*36);   // after 36 hours it is expired
         await this.initializeDb();
+        //await this.unmatchExpiredMatches(60*60*36);   // after 36 hours it is expired
+        await this.unmatchExpiredMatches(60); // FOR TESTING: 60 secs and matches expire
 
         let edges: Edge[];
         let maleUsers: User[];
