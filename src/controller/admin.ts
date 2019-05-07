@@ -89,7 +89,7 @@ class Admin implements Component {
             email: rnd + "@example.com",
             firstName: rnd,
             lastName: "Example",
-            age: 18 + Math.floor(Math.random() * 42),
+            age: 18 + Math.floor(Math.random() * 20),
             gender: Math.random() >= 0.5 ? Gender.Male : Gender.Female,
             country: Countries.China,
             city: Cities.Suzhou
@@ -112,9 +112,9 @@ class Admin implements Component {
             openness: 1 + Math.floor(Math.random() * 5),
             warmheartedness: 1 + Math.floor(Math.random() * 5)
         };
-        let minAge = user.age - 5;
+        let minAge = user.age - 10;
         if (minAge < 18) minAge = 18;
-        let maxAge = user.age + 5;
+        let maxAge = user.age + 10;
         if (maxAge >= 60) maxAge = 59;
         user.matchingPref = {
             gender: Math.random() >= 0.5 ? Gender.Male : Gender.Female,
