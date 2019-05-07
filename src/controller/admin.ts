@@ -24,6 +24,7 @@ class Admin implements Component {
         // Everything here is excluded from the normal authentication
         // pipeline, we implement our own authentication middleware
         AuthManager.excludePath("/admin/activate");
+        AuthManager.excludePath("/admin/inactive");
         AuthManager.excludePath("/admin/do_match");
         AuthManager.excludePath("/admin/generateRandomUser");
         router.use((req, res, next) => {
@@ -41,12 +42,20 @@ class Admin implements Component {
         });
         // The actual routes
         router.post("/activate", this.activateUser.bind(this));
+        router.get("/inactive", this.getUsersToActivate.bind(this));
         router.get("/do_match", this.doMatch.bind(this));
         router.post("/generateRandomUser", this.generateRandomUser.bind(this));
         return {
             mountpoint: "/admin",
             router: router
         };
+    }
+
+    @ExceptionToResponse
+    private async getUsersToActivate(
+        req: express.Request, res: express.Response
+    ): Promise<Response<string[]>> {
+        return { ok: true, result: await UserManager.findInactiveUsers() };
     }
 
     // "Approve" a registration. Set the state of a user

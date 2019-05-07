@@ -93,6 +93,21 @@ class UserManager implements Component {
         }
     }
 
+    // Find all users in `MatchingPreferencesSet` state, which requires manual activation
+    // to continue
+    public async findInactiveUsers(): Promise<string[]> {
+        let res = await this.db.find({
+            selector: {
+                state: State.MatchingPreferencesSet
+            }
+        });
+        if (res.docs == null) {
+            return null;
+        } else {
+            return res.docs.map((it) => it.uid);
+        }
+    }
+
     // Get current user in this authenticated request
     // this should ONLY be called from those endpoints
     // protected by `AuthManager`
