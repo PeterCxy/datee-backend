@@ -31,7 +31,7 @@ class MatchManager implements Component {
         await this.initializeDb();
         //let multerMiddleware = multer({ storage: multer.memoryStorage() });
         let router = express.Router();
-        router.get("/list", this.getMatched.bind(this));
+        router.get("/current", this.getMatched.bind(this));
         router.delete("/current", this.rejectCurrentMatch.bind(this));
         router.get("/proposals/:uid", this.getProposals.bind(this));   // must provide user id to retrieve the match's proposals
         router.put("/proposals/:uid", this.putProposal.bind(this));
