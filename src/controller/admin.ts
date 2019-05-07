@@ -112,11 +112,14 @@ class Admin implements Component {
             openness: 1 + Math.floor(Math.random() * 5),
             warmheartedness: 1 + Math.floor(Math.random() * 5)
         };
-        let minAge = 18 + Math.floor(Math.random() * 42)
+        let minAge = user.age - 5;
+        if (minAge < 18) minAge = 18;
+        let maxAge = user.age + 5;
+        if (maxAge >= 60) maxAge = 59;
         user.matchingPref = {
             gender: Math.random() >= 0.5 ? Gender.Male : Gender.Female,
             minAge: minAge,
-            maxAge: minAge + Math.floor(Math.random() * (60 - minAge)),
+            maxAge: maxAge,
             romance: 1 + Math.floor(Math.random() * 5),
             openness: 1 + Math.floor(Math.random() * 5),
             warmheartedness: 1 + Math.floor(Math.random() * 5)
