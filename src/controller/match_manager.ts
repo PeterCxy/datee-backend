@@ -32,6 +32,7 @@ class MatchManager implements Component {
         //let multerMiddleware = multer({ storage: multer.memoryStorage() });
         let router = express.Router();
         router.get("/list", this.getMatched.bind(this));
+        router.delete("/current", this.rejectCurrentMatch.bind(this));
         router.get("/proposals/:uid", this.getProposals.bind(this));   // must provide user id to retrieve the match's proposals
         router.put("/proposals/:uid", this.putProposal.bind(this));
         router.put("/accept/:uid", this.acceptProposal.bind(this));
@@ -313,19 +314,19 @@ class MatchManager implements Component {
     /////////////// REMOVE / UPDATE ///////////////////////
 
     public async unMatch(match: Match) {
-        let toDelete = await this.db.find({
+        let toDelete = (await this.db.find({
             selector: {
                 userID1: match.userID1,
                 userID2: match.userID2,
                 active: match.active
             }
-        });
+        })).docs[0];
         
         // make the match inactive
-        match.active = false;
+        toDelete.active = false;
 
         // and update it in the database
-        let res = await this.db.insert(match);
+        let res = await this.db.insert(toDelete);
         if (!res.ok) {
             throw "Failed to unmatch match in database";
         }
@@ -345,6 +346,19 @@ class MatchManager implements Component {
             throw "No match for you. You are an exception. Sorry.";
         }
         return { ok: true, result: match.userID1 == uid ? match.userID2 : match.userID1 };
+    }
+
+    @ExceptionToResponse
+    private async rejectCurrentMatch(
+        req: express.Request, res: express.Response
+    ): Promise<Response<void>> {
+        let uid = await auth_manager.getCurrentUID(res);
+        let match = await this.getUserMatch(uid);
+        if (match == null) {
+            throw "No match for you. You are an exception. Sorry.";
+        }
+        await this.unMatch(match);
+        return { ok: true }
     }
 
     @ExceptionToResponse
