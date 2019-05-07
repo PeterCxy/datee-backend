@@ -39,6 +39,7 @@ class UserManager implements Component {
         router.put("/self_assessment", this.setSelfAssessment.bind(this));
         router.put("/matching_pref", this.setMatchingPreferences.bind(this));
         router.get("/random", this.getRandomUidWithPhoto.bind(this));
+        router.get("/:uid", this.getUser.bind(this));
         return {
             mountpoint: "/user",
             router: router
@@ -247,6 +248,19 @@ class UserManager implements Component {
         delete user.matchingPref;
         delete user.selfAssessment;
         return user;
+    }
+
+    @ExceptionToResponse
+    private async getUser(
+        req: express.Request, res: express.Response
+    ): Promise<Response<UserInfo>> {
+        let user = await this.findUserById(req.params["uid"]);
+        let userSanitized = this.sanitizeUser(util.sanitizeDocument(user));
+        delete userSanitized.state;
+        return {
+            ok: true,
+            result: userSanitized
+        };
     }
 
     @ExceptionToResponse
