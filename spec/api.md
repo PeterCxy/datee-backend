@@ -97,6 +97,30 @@ Response:
 
 The meaning of all the fields in `result` are already described above in the `Register` API.
 
+### Get User Info
+
+Endpoint: `/user/<uid>`  
+Method: `GET`  
+Authentication: Required
+
+Response:
+
+```json
+{
+    "ok":true,
+    "result":{
+        "uid":"some-user-id",
+        "email":"some_email@example.com",
+        "firstName":"San",
+        "lastName":"Zhang",
+        "age":18,
+        "gender":0,
+        "country":0,
+        "city":0,
+        "state":0
+    }
+}
+```
 
 ### Random
 
@@ -248,6 +272,27 @@ Return:
     "result": <rating_score>
 }
 ```
+
+### Get currently matched user
+
+Endpoint: `/match/current`  
+Method: `GET`  
+Authentication: Required  
+Return:
+
+```json
+{
+    "ok": true,
+    "result": "<some_uid>"
+}
+```
+
+### Reject current match
+
+Endpoint: `/match/current`  
+Method: `DELETE`  
+Authentication: Required  
+Return: ok or not
 
 ---
 Admin APIs
