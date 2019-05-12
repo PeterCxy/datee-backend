@@ -2,7 +2,6 @@ import OAuthClients from "./model/oauth_client";
 import express from "express";
 import bodyParser from "body-parser";
 import nano from "nano";
-import { timingSafeEqual } from "crypto";
 
 interface ServerConfig {
     admin_token: string,
