@@ -2,6 +2,7 @@ import OAuthClients from "./model/oauth_client";
 import express from "express";
 import bodyParser from "body-parser";
 import nano from "nano";
+import { timingSafeEqual } from "crypto";
 
 interface ServerConfig {
     admin_token: string,
@@ -44,6 +45,20 @@ class DateeServer {
     }
 
     public async setupRoutes(): Promise<void> {
+        // Handle CORS for debugging purposes
+        this.app.use((req, res, next) => {
+            if (process.env["DEBUG"] == "1") {
+                res.set("Access-Control-Allow-Origin", '*');
+                res.set("Access-Control-Allow-Headers", "Authorization");
+            }
+            if ('OPTIONS' === req.method) {
+                // CORS preflight requests. Always respond with 200
+                res.sendStatus(200);
+            } else {
+                next();
+            }
+        });
+
         // Requests can use JSON encoding
         this.app.use(bodyParser.json());
         // Good old urlencoded POST also accepted
